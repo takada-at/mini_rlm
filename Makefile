@@ -4,3 +4,6 @@ format:
 
 typecheck:
 	uv run mypy --ignore-missing-imports .
+
+test:
+	uv run pytest -v --tb=short
