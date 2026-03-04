@@ -1,6 +1,16 @@
+import random
+import time
 from typing import Any, Dict, List
 
-from mini_rlm.llm.data_model import MessageContent, RequestContext
+from mini_rlm.llm.data_model import (
+    MessageContent,
+    RequestContext,
+    RequestPayload,
+    RequestState,
+    RequestStatus,
+    RetryPolicy,
+)
+from mini_rlm.llm.executor import execute_request_loop
 
 
 def dump_messages(messages: List[MessageContent]) -> List[Dict[str, Any]]:
@@ -19,16 +29,56 @@ def make_api_request(
     if context.kwargs:
         request_body.update(context.kwargs)
 
-    response = context.session.request(
-        "POST",
-        context.endpoint.url,
-        headers=context.endpoint.headers,
-        json=request_body,
+    payload = RequestPayload(
+        url=context.endpoint.url,
+        headers=context.endpoint.headers or {},
+        body=request_body,
+        timeout_seconds=30.0,
+    )
+    retry_policy = RetryPolicy(
+        max_attempts=5,
+        initial_backoff_seconds=0.5,
+        backoff_multiplier=2.0,
+        max_backoff_seconds=8.0,
+        jitter_ratio=0.2,
+        retryable_status_codes=[429, 500, 502, 503, 504],
+    )
+    initial_state = RequestState(
+        status=RequestStatus.IDLE,
+        payload=payload,
+        retry_policy=retry_policy,
     )
 
-    response.raise_for_status()
-    # For simplicity, we assume the response is a JSON array of MessageContent
-    response_data = response.json()
+    def send_request(request_payload: RequestPayload) -> Dict[str, Any]:
+        response = context.session.request(
+            "POST",
+            request_payload.url,
+            headers=request_payload.headers,
+            json=request_payload.body,
+            timeout=request_payload.timeout_seconds,
+        )
+        response.raise_for_status()
+        return response.json()
+
+    final_state = execute_request_loop(
+        initial_state=initial_state,
+        send_request=send_request,
+        sleep_fn=time.sleep,
+        random_fn=random.random,
+    )
+    if (
+        final_state.status != RequestStatus.SUCCEEDED
+        or final_state.response_json is None
+    ):
+        error_type = (
+            final_state.last_error_type.value
+            if final_state.last_error_type is not None
+            else "unknown"
+        )
+        error_message = final_state.last_error_message or "request failed"
+        raise RuntimeError(f"LLM API request failed: {error_type}: {error_message}")
+
+    response_data = final_state.response_json
     if (
         "choices" in response_data
         and isinstance(response_data["choices"], list)

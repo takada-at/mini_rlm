@@ -32,5 +32,5 @@ e.g.
 make format
 make lint
 make type-check
-make tests
+make test
 ```
