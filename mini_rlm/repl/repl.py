@@ -8,7 +8,8 @@ import sys
 import tempfile
 import time
 import uuid
-from typing import Any
+from pathlib import Path
+from typing import IO, Any
 
 from mini_rlm.repl.data_model import REPLResult, ReplState
 
@@ -352,3 +353,12 @@ def add_history(
 
     state.history_count = max(state.history_count, history_index + 1)
     return history_index
+
+
+def add_file(state: ReplState, filename: str, source_file: IO[bytes]) -> str:
+    """Add a file with *filename* and *content* to the REPL temp directory."""
+    safe_name = Path(filename).name  # Prevent directory traversal
+    file_path = Path(state.temp_dir) / safe_name
+    with file_path.open("wb") as f:
+        f.write(source_file.read())
+    return safe_name
