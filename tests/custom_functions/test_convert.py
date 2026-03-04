@@ -1,5 +1,5 @@
 from mini_rlm.custom_functions.convert import convert_function_to_string
-from mini_rlm.custom_functions.data_model import Function
+from mini_rlm.custom_functions.data_model import FunctionBase
 
 # =============================================================================
 # convert_function_to_string
@@ -8,7 +8,7 @@ from mini_rlm.custom_functions.data_model import Function
 
 def test_basic_function_with_args_and_return_type():
     # given: 名前・引数・戻り値・説明を持つ Function オブジェクト
-    func = Function(
+    func = FunctionBase(
         name="add",
         description="Add two integers.",
         arguments=[
@@ -26,7 +26,7 @@ def test_basic_function_with_args_and_return_type():
 
 def test_no_arguments():
     # given: 引数を持たない Function オブジェクト
-    func = Function(
+    func = FunctionBase(
         name="get_value",
         description="Return a fixed value.",
         arguments=[],
@@ -40,7 +40,7 @@ def test_no_arguments():
 
 def test_no_return_type():
     # given: return_type が None の Function オブジェクト
-    func = Function(
+    func = FunctionBase(
         name="print_value",
         description="Print something.",
         arguments=[{"name": "val", "description": "", "type": str}],
@@ -54,7 +54,7 @@ def test_no_return_type():
 
 def test_multiple_arguments_are_comma_separated():
     # given: 3つの引数を持つ Function オブジェクト
-    func = Function(
+    func = FunctionBase(
         name="func",
         description="A function.",
         arguments=[
@@ -72,7 +72,7 @@ def test_multiple_arguments_are_comma_separated():
 
 def test_multiline_description_each_line_indented():
     # given: 複数行の説明を持つ Function オブジェクト
-    func = Function(
+    func = FunctionBase(
         name="compute",
         description="First line.\nSecond line.\nThird line.",
         arguments=[],
@@ -92,7 +92,7 @@ def test_description_with_leading_whitespace_is_dedented():
         Dedented first line.
         Dedented second line.
     """
-    func = Function(
+    func = FunctionBase(
         name="dedented_func",
         description=description,
         arguments=[],

@@ -9,13 +9,20 @@ class Argument(BaseModel):
     type: Type
 
 
-class Function(BaseModel):
+class FunctionBase(BaseModel):
     name: str
     description: str
     arguments: List[Argument]
-    function: Callable[..., Any]
     return_type: Optional[Type] = None
 
 
+class FunctionFactory(FunctionBase):
+    factory: Callable[..., Any]
+
+
+class Function(FunctionBase):
+    function: Callable[..., Any]
+
+
 class FunctionCollection(BaseModel):
-    functions: List[Function]
+    functions: List[FunctionBase]

@@ -1,27 +1,41 @@
-from typing import Any, Dict
+from typing import List
 
-from mini_rlm.custom_functions.data_model import FunctionCollection
+from mini_rlm.custom_functions.data_model import (
+    FunctionBase,
+    FunctionCollection,
+)
 from mini_rlm.custom_functions.functions import (
     convert_pdf_page_to_image_data_function,
-    create_query_image_llm,
-    create_query_llm,
-    create_query_pdf_llm,
+    open_image_data_function,
     pdf_page_length_function,
+    query_image_llm_factory,
+    query_llm_factory,
+    query_pdf_llm_factory,
 )
-from mini_rlm.llm.context_factory import create_request_context
-from mini_rlm.llm.data_model import Endpoint
 
 
-def create_function_collection(
-    endpoint: Endpoint, request_params: Dict[str, Any]
-) -> FunctionCollection:
-    """Create a FunctionCollection with predefined functions and LLM query functions."""
-    request_context = create_request_context(endpoint, request_params)
-    functions = [
+def minimal_function_collection() -> FunctionCollection:
+    """Create a minimal FunctionCollection with only the query_llm function."""
+    return FunctionCollection(functions=[query_llm_factory])
+
+
+def image_function_collection() -> FunctionCollection:
+    """Create a FunctionCollection with image-related functions and LLM query functions."""
+    functions: List[FunctionBase] = [
+        open_image_data_function,
+        query_llm_factory,
+        query_image_llm_factory,
+    ]
+    return FunctionCollection(functions=functions)
+
+
+def pdf_function_collection() -> FunctionCollection:
+    """Create a FunctionCollection with PDF-related functions and LLM query functions."""
+    functions: List[FunctionBase] = [
         convert_pdf_page_to_image_data_function,
         pdf_page_length_function,
-        create_query_llm(request_context),
-        create_query_image_llm(request_context),
-        create_query_pdf_llm(request_context),
+        query_llm_factory,
+        query_image_llm_factory,
+        query_pdf_llm_factory,
     ]
     return FunctionCollection(functions=functions)
