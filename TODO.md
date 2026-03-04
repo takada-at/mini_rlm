@@ -1,0 +1,3 @@
+- API Requestをきちんと書き直す(リトライ、タイムアウト対応)
+- repl code parserを書く
+- トップレベルAPIの設計

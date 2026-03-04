@@ -2,6 +2,8 @@ from typing import Any, Callable, List, Optional, Type
 
 from pydantic import BaseModel
 
+from mini_rlm.llm.data_model import RequestContext
+
 
 class Argument(BaseModel):
     name: str
@@ -17,7 +19,7 @@ class FunctionBase(BaseModel):
 
 
 class FunctionFactory(FunctionBase):
-    factory: Callable[..., Any]
+    factory: Callable[[RequestContext], Callable[..., Any]]
 
 
 class Function(FunctionBase):
