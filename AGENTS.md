@@ -19,6 +19,14 @@ e.g.
 
 データモデル以外のクラスは使用せず、関数型志向。状態はデータモデルで保持する。
 
+## Reducerパターン
+複雑な状態遷移はReducerパターンで実装。
+
+純粋関数型のreducerと、副作用ありのexecutorの組み合わせで実装
+
+reducerはprev_stateとprev_command_resultを受け取り、next_stateとcommandを返す
+executorはreducerを呼び、コマンドを実行
+
 ## テスト
 
 - pytestを利用。
