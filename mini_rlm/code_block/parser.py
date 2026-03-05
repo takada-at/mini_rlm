@@ -1,6 +1,6 @@
 import re
 
-from mini_rlm.repl_state.repl import execute_code
+from mini_rlm.repl.repl import execute_code
 
 
 def find_code_blocks(text: str) -> list[str]:

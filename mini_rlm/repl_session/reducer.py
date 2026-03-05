@@ -1,0 +1,142 @@
+from mini_rlm.repl_session.data_model import (
+    CommandResult,
+    ReplSessionCommand,
+    ReplSessionCommandType,
+    ReplSessionResultType,
+    ReplSessionState,
+    ReplSessionStatus,
+    TerminationReason,
+)
+
+
+def _fail_and_exit(
+    state: ReplSessionState,
+    reason: TerminationReason,
+) -> tuple[ReplSessionState, ReplSessionCommand]:
+    next_state = state.model_copy(
+        update={
+            "status": ReplSessionStatus.FAILED,
+            "termination_reason": reason,
+            "last_command_type": ReplSessionCommandType.EXIT,
+        }
+    )
+    return next_state, ReplSessionCommand(type=ReplSessionCommandType.EXIT)
+
+
+def _complete_and_exit(
+    state: ReplSessionState,
+) -> tuple[ReplSessionState, ReplSessionCommand]:
+    next_state = state.model_copy(
+        update={
+            "status": ReplSessionStatus.COMPLETED,
+            "is_complete": True,
+            "termination_reason": TerminationReason.COMPLETED,
+            "last_command_type": ReplSessionCommandType.COMPLETE,
+        }
+    )
+    return next_state, ReplSessionCommand(type=ReplSessionCommandType.COMPLETE)
+
+
+def _check_termination(
+    state: ReplSessionState,
+) -> tuple[ReplSessionState, ReplSessionCommand] | None:
+    if state.is_cancelled:
+        return _fail_and_exit(state, TerminationReason.CANCELLED)
+
+    if state.total_tokens > state.limits.token_limit:
+        return _fail_and_exit(state, TerminationReason.TOKEN_LIMIT_EXCEEDED)
+
+    if state.iteration_count >= state.limits.iteration_limit:
+        return _fail_and_exit(state, TerminationReason.ITERATIONS_EXHAUSTED)
+
+    elapsed_seconds = state.current_time_seconds - state.started_at_seconds
+    if elapsed_seconds > state.limits.timeout_seconds:
+        return _fail_and_exit(state, TerminationReason.TIMEOUT)
+
+    if state.error_count >= state.limits.error_threshold:
+        return _fail_and_exit(state, TerminationReason.ERROR_THRESHOLD_EXCEEDED)
+
+    return None
+
+
+def _with_command(
+    state: ReplSessionState,
+    command_type: ReplSessionCommandType,
+) -> tuple[ReplSessionState, ReplSessionCommand]:
+    next_state = state.model_copy(update={"last_command_type": command_type})
+    return next_state, ReplSessionCommand(type=command_type)
+
+
+def _apply_result(state: ReplSessionState, result: CommandResult) -> ReplSessionState:
+    next_state = state.model_copy(
+        update={
+            "total_tokens": state.total_tokens + result.consumed_tokens,
+            "history_length": (
+                result.history_length_override
+                if result.history_length_override is not None
+                else state.history_length + result.history_length_delta
+            ),
+            "is_complete": result.is_complete
+            if result.is_complete is not None
+            else state.is_complete,
+        }
+    )
+    return next_state
+
+
+def _next_command_after_success(
+    state: ReplSessionState,
+    command_type: ReplSessionCommandType,
+) -> tuple[ReplSessionState, ReplSessionCommand]:
+    if command_type == ReplSessionCommandType.CALL_LLM:
+        return _with_command(state, ReplSessionCommandType.EXECUTE_CODE)
+
+    if command_type == ReplSessionCommandType.EXECUTE_CODE:
+        return _with_command(state, ReplSessionCommandType.APPEND_HISTORY)
+
+    if command_type == ReplSessionCommandType.APPEND_HISTORY:
+        return _with_command(state, ReplSessionCommandType.CHECK_COMPLETE)
+
+    if command_type == ReplSessionCommandType.CHECK_COMPLETE:
+        if state.is_complete:
+            return _complete_and_exit(state)
+
+        next_state = state.model_copy(
+            update={"iteration_count": state.iteration_count + 1}
+        )
+        if next_state.history_length > next_state.limits.history_limit:
+            return _with_command(next_state, ReplSessionCommandType.COMPACTING)
+        return _with_command(next_state, ReplSessionCommandType.CALL_LLM)
+
+    if command_type == ReplSessionCommandType.COMPACTING:
+        return _with_command(state, ReplSessionCommandType.CALL_LLM)
+
+    return _with_command(state, ReplSessionCommandType.EXIT)
+
+
+def reduce_repl_session(
+    prev_state: ReplSessionState,
+    prev_command_result: CommandResult | None,
+) -> tuple[ReplSessionState, ReplSessionCommand]:
+    state = prev_state
+
+    if prev_command_result is not None:
+        state = _apply_result(state, prev_command_result)
+
+        if prev_command_result.type != ReplSessionResultType.SUCCESS:
+            state = state.model_copy(update={"error_count": state.error_count + 1})
+            check = _check_termination(state)
+            if check is not None:
+                return check
+            return _with_command(state, prev_command_result.command_type)
+
+    check = _check_termination(state)
+    if check is not None:
+        return check
+
+    if prev_command_result is None:
+        if state.history_length > state.limits.history_limit:
+            return _with_command(state, ReplSessionCommandType.COMPACTING)
+        return _with_command(state, ReplSessionCommandType.CALL_LLM)
+
+    return _next_command_after_success(state, prev_command_result.command_type)
