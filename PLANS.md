@@ -6,7 +6,7 @@ This ExecPlan is a living document. The sections `Progress`, `Surprises & Discov
 
 ## Purpose / Big Picture
 
-この変更により、REPL セッションの 1 イテレーション実行が、純粋関数の reducer と副作用 executor に分離される。ユーザーは「LLM 呼び出し」「コード実行」「履歴更新」「完了判定」を安定した順序で反復でき、トークン上限、反復上限、タイムアウト、エラー閾値、キャンセルを同じ状態遷移モデルで扱える。動作確認は `pytest` の `tests/repl_session` 配下のシナリオテストで行い、成功終了と各失敗終了理由を再現する。
+この変更により、REPL セッションの 1 イテレーション実行が、純粋関数の reducer と副作用 executor に分離される。ユーザーは「LLM 呼び出し」「コード実行」「履歴更新」「完了判定」を安定した順序で反復でき、トークン上限、反復上限、タイムアウト、エラー閾値、キャンセルを同じ状態遷移モデルで扱える。動作確認は reducer 単体テストを中心に行い、成功終了と各失敗終了理由を再現する。
 
 ## Progress
 
@@ -14,10 +14,9 @@ This ExecPlan is a living document. The sections `Progress`, `Surprises & Discov
 - [x] (2026-03-05 07:06Z) `repl_session` 実装方針をこの ExecPlan に初版として記述した。
 - [x] (2026-03-05 07:00Z) `mini_rlm/repl_session/data_model.py` に状態・コマンド・結果・終了理由モデルを追加した。
 - [x] (2026-03-05 07:00Z) `mini_rlm/repl_session/reducer.py` に純粋関数 reducer を実装した。
-- [ ] `mini_rlm/repl_session/executor.py` に副作用 executor を実装する。
-- [ ] `tests/repl_session/test_executor.py` を追加する。
+- [x] (2026-03-05 07:12Z) `mini_rlm/repl_session/executor.py` に副作用 executor を実装した。
 - [x] (2026-03-05 07:00Z) `tests/repl_session/test_repl_session_reducer.py` を追加し、10件パスを確認した。
-- [ ] `make test` を実行し、結果を反映する。
+- [x] (2026-03-05 07:54Z) executor 単体テストを削除し、`make test` を再実行して全件パスを確認した。
 
 ## Surprises & Discoveries
 
@@ -41,9 +40,13 @@ This ExecPlan is a living document. The sections `Progress`, `Surprises & Discov
   Rationale: 実行結果の可観測性を上げ、テストで期待値を固定しやすくするため。
   Date/Author: 2026-03-05 / Codex
 
+- Decision: `repl_session` では「ロジックは関数型で単体テスト」「グルーコードの executor は単体テスト対象外」のポリシーを採用する。
+  Rationale: 過剰なグルーコードテストは改修コストを増やすため、検証は reducer テストへ集中させる。
+  Date/Author: 2026-03-05 / User+Codex
+
 ## Outcomes & Retrospective
 
-現時点では計画策定のみ完了。実装と検証は未着手。次のマイルストーンで reducer と executor を実装し、最終的に失敗理由ごとの終了挙動をテストで実証する。
+`data_model`、`reducer`、`executor` の初期実装は完了。検証戦略は reducer の単体テスト中心に再調整した。今後は executor 側のテスト拡張ではなく、reducer の遷移設計と状態モデル改善を優先する。
 
 ## Context and Orientation
 
@@ -64,7 +67,7 @@ This ExecPlan is a living document. The sections `Progress`, `Surprises & Discov
 
 続いて `mini_rlm/repl_session/executor.py` を実装する。`execute_repl_session_loop(initial_state, run_call_llm, run_execute_code, run_append_history, run_check_complete, run_compacting, now_fn)` のように依存関数を注入し、テストで副作用を差し替え可能にする。executor は reducer から返るコマンドを受け、該当ハンドラを呼び `CommandResult` を作って次ループに渡す。`COMPLETE` と `EXIT` は副作用なしで終了し、最終 state を返す。
 
-最後にテストを追加する。`tests/repl_session/test_reducer.py` では遷移網羅（初回遷移、標準フロー、履歴圧縮分岐、各終了理由、エラー閾値）を検証する。`tests/repl_session/test_executor.py` では依存関数をスタブして、ループ全体が期待順序でコマンド実行し、終了時 state が正しいことを検証する。コメントは既存規約に合わせ give/when/then で記述する。
+最後にテストを追加する。`tests/repl_session/test_repl_session_reducer.py` で遷移網羅（初回遷移、標準フロー、履歴圧縮分岐、各終了理由、エラー閾値）を検証する。コメントは既存規約に合わせ give/when/then で記述する。executor はグルーコードとして単体テスト対象外にする。
 
 ## Concrete Steps
 
@@ -79,7 +82,7 @@ This ExecPlan is a living document. The sections `Progress`, `Surprises & Discov
 2. テストファイル作成
 
     mkdir -p tests/repl_session
-    touch tests/repl_session/test_reducer.py tests/repl_session/test_executor.py
+    touch tests/repl_session/test_repl_session_reducer.py
 
 3. 整形・静的検査・型検査・テスト
 
@@ -99,7 +102,7 @@ This ExecPlan is a living document. The sections `Progress`, `Surprises & Discov
 - `history_length > history_limit` のとき `COMPACTING` を返し、圧縮成功後に標準フローへ復帰する。
 - `token_limit`, `iteration_limit`, `timeout`, `cancelled`, `error_threshold` いずれかの条件成立時、`EXIT` と対応する `TerminationReason` を返す。
 - `CHECK_COMPLETE` の結果が完了なら `COMPLETE`（または `EXIT` with `Completed`）で終了する。
-- executor が reducer の返すコマンド順序どおりに依存関数を呼び、最終 state を返す。
+- executor は reducer の出力コマンドを副作用へ委譲するグルー層として実装され、詳細検証は reducer 側で担保する。
 
 テスト観点としては「変更前は `tests/repl_session` が存在しないため失敗し、変更後は新規テストがパスする」ことを確認する。
 
@@ -120,7 +123,7 @@ This ExecPlan is a living document. The sections `Progress`, `Surprises & Discov
 
 実装後はここに次を追記する。
 
-- `make lint`, `make type-check`, `make test` の要点ログ
+- `make lint`, `make typecheck`, `make test` の要点ログ
 - 代表的なテストケース（例: `TokenLimitExceeded`）の短い実行結果
 
 ## Interfaces and Dependencies
@@ -163,3 +166,5 @@ This ExecPlan is a living document. The sections `Progress`, `Surprises & Discov
 
 Plan revision note (2026-03-05): 初版作成。ユーザー要求（`repl_session` の reducer パターン設計）を実装可能な粒度に落とし込み、必須セクションと検証手順を追加した。
 Plan revision note (2026-03-05): `data_model` と `reducer` 実装、および reducer テスト追加に合わせて Progress を更新した。`type-check` は Makefile で `typecheck` ターゲット名だったため、その実行結果を反映した。
+Plan revision note (2026-03-05): `executor` と executor テストを追加し、全体テスト通過結果を Progress に反映した。`test_executor.py` の名前衝突回避のため `test_repl_session_executor.py` を採用した。
+Plan revision note (2026-03-05): ポリシー変更（グルーコードは単体テスト対象外）に合わせて executor テストを削除し、テスト戦略と Progress/Decision Log を更新した。

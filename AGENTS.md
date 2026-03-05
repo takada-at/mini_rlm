@@ -39,6 +39,6 @@ executorはreducerを呼び、コマンドを実行
 ```
 make format
 make lint
-make type-check
+make typecheck
 make test
 ```
