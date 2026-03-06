@@ -114,8 +114,9 @@ def _next_command_after_success(
         new_state, next_command = _with_command(
             state, ReplSessionCommandType.CHECK_COMPLETE
         )
+        old_messages = state.messages if state.messages is not None else []
         new_state = new_state.model_copy(
-            update={"messages": prev_command_result.new_messages}
+            update={"messages": old_messages + (prev_command_result.new_messages or [])}
         )
         return new_state, next_command
 
