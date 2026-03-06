@@ -155,11 +155,14 @@ def execute_compacting(
     if len(messages) >= history_limit:
         # simple compacting strategy: keep only the last N messages, where N is half of the history limit
         new_messages = messages[-(history_limit // 2) :]
+        return CommandResult(
+            type=ReplSessionResultType.SUCCESS,
+            command_type=command.type,
+            history_length_override=len(new_messages),
+            compacted_messages=new_messages,
+        )
     else:
-        new_messages = messages
-    return CommandResult(
-        type=ReplSessionResultType.SUCCESS,
-        command_type=command.type,
-        history_length_override=len(new_messages),
-        new_messages=new_messages,
-    )
+        return CommandResult(
+            type=ReplSessionResultType.SUCCESS,
+            command_type=command.type,
+        )

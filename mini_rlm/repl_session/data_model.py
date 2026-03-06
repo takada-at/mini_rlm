@@ -3,9 +3,8 @@ from typing import List
 
 from pydantic import BaseModel
 
-from mini_rlm.llm.data_model import MessageContent
-from mini_rlm.repl.data_model import ReplResult
 from mini_rlm.llm.data_model import MessageContent, RequestContext
+from mini_rlm.repl.data_model import ReplResult
 
 
 class ReplSessionStatus(StrEnum):
@@ -66,6 +65,7 @@ class CommandResult(BaseModel):
     repl_results: List[ReplSessionHistoryEntry] | None = None
     is_complete: bool | None = None
     new_messages: List[MessageContent] | None = None
+    compacted_messages: List[MessageContent] | None = None
     final_answer: str | None = None
     error_message: str | None = None
 
@@ -85,24 +85,8 @@ class ReplSessionState(BaseModel):
     repl_results: List[ReplSessionHistoryEntry] | None = None
     last_command_type: ReplSessionCommandType | None = None
     termination_reason: TerminationReason | None = None
-<<<<<<< HEAD
     messages: List[MessageContent] | None = None
     final_answer: str | None = None
-=======
-
-
-class ReplSessionCommand(BaseModel):
-    type: ReplSessionCommandType
-
-
-class CommandResult(BaseModel):
-    command_type: ReplSessionCommandType
-    type: ReplSessionResultType
-    consumed_tokens: int = 0
-    history_length_delta: int = 0
-    history_length_override: int | None = None
-    is_complete: bool | None = None
-    error_message: str | None = None
 
 
 class ReplSessionExecutorState(BaseModel):
@@ -111,4 +95,3 @@ class ReplSessionExecutorState(BaseModel):
     system_prompt: str
     prompt: str
     messages: List[MessageContent] | None = None
->>>>>>> origin/main

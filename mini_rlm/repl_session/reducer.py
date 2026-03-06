@@ -135,7 +135,14 @@ def _next_command_after_success(
         return _with_command(next_state, ReplSessionCommandType.CALL_LLM)
 
     if command_type == ReplSessionCommandType.COMPACTING:
-        return _with_command(state, ReplSessionCommandType.CALL_LLM)
+        new_state, next_command = _with_command(state, ReplSessionCommandType.CALL_LLM)
+        assert prev_command_result.compacted_messages is not None, (
+            "Compacting command result must include compacted_messages"
+        )
+        new_state = new_state.model_copy(
+            update={"messages": prev_command_result.compacted_messages}
+        )
+        return new_state, next_command
 
     return _with_command(state, ReplSessionCommandType.EXIT)
 
