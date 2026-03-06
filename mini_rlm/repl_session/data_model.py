@@ -4,6 +4,7 @@ from typing import List
 from pydantic import BaseModel
 
 from mini_rlm.llm.data_model import MessageContent, RequestContext
+from mini_rlm.repl.data_model import ReplResult
 
 
 class ReplSessionStatus(StrEnum):
@@ -45,33 +46,45 @@ class ReplSessionLimits(BaseModel):
     history_limit: int
 
 
-class ReplSessionState(BaseModel):
-    status: ReplSessionStatus
-    limits: ReplSessionLimits
-    started_at_seconds: float
-    current_time_seconds: float
-    iteration_count: int = 0
-    total_tokens: int = 0
-    history_length: int = 0
-    error_count: int = 0
-    is_complete: bool = False
-    is_cancelled: bool = False
-    last_command_type: ReplSessionCommandType | None = None
-    termination_reason: TerminationReason | None = None
-
-
 class ReplSessionCommand(BaseModel):
     type: ReplSessionCommandType
+
+
+class ReplSessionHistoryEntry(BaseModel):
+    code: str
+    repl_result: ReplResult | None = None
 
 
 class CommandResult(BaseModel):
     command_type: ReplSessionCommandType
     type: ReplSessionResultType
     consumed_tokens: int = 0
-    history_length_delta: int = 0
-    history_length_override: int | None = None
+    last_llm_message: str | None = None
+    repl_results: List[ReplSessionHistoryEntry] | None = None
     is_complete: bool | None = None
+    new_messages: List[MessageContent] | None = None
+    compacted_messages: List[MessageContent] | None = None
+    final_answer: str | None = None
     error_message: str | None = None
+
+
+class ReplSessionState(BaseModel):
+    prompt: str
+    status: ReplSessionStatus
+    limits: ReplSessionLimits
+    started_at_seconds: float
+    current_time_seconds: float
+    iteration_count: int = 0
+    total_tokens: int = 0
+    error_count: int = 0
+    is_complete: bool = False
+    is_cancelled: bool = False
+    last_llm_message: str | None = None
+    repl_results: List[ReplSessionHistoryEntry] | None = None
+    last_command_type: ReplSessionCommandType | None = None
+    termination_reason: TerminationReason | None = None
+    messages: List[MessageContent] | None = None
+    final_answer: str | None = None
 
 
 class ReplSessionExecutorState(BaseModel):

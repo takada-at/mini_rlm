@@ -71,11 +71,6 @@ def _apply_result(state: ReplSessionState, result: CommandResult) -> ReplSession
     next_state = state.model_copy(
         update={
             "total_tokens": state.total_tokens + result.consumed_tokens,
-            "history_length": (
-                result.history_length_override
-                if result.history_length_override is not None
-                else state.history_length + result.history_length_delta
-            ),
             "is_complete": result.is_complete
             if result.is_complete is not None
             else state.is_complete,
@@ -86,30 +81,63 @@ def _apply_result(state: ReplSessionState, result: CommandResult) -> ReplSession
 
 def _next_command_after_success(
     state: ReplSessionState,
-    command_type: ReplSessionCommandType,
+    prev_command_result: CommandResult,
 ) -> tuple[ReplSessionState, ReplSessionCommand]:
+    command_type = prev_command_result.command_type
     if command_type == ReplSessionCommandType.CALL_LLM:
-        return _with_command(state, ReplSessionCommandType.EXECUTE_CODE)
+        new_state, next_command = _with_command(
+            state, ReplSessionCommandType.EXECUTE_CODE
+        )
+        new_state = new_state.model_copy(
+            update={
+                "last_llm_message": prev_command_result.last_llm_message,
+                "repl_results": None,
+            }
+        )
+        return new_state, next_command
 
     if command_type == ReplSessionCommandType.EXECUTE_CODE:
-        return _with_command(state, ReplSessionCommandType.APPEND_HISTORY)
+        new_state, next_command = _with_command(
+            state, ReplSessionCommandType.APPEND_HISTORY
+        )
+        new_state = new_state.model_copy(
+            update={"repl_results": prev_command_result.repl_results}
+        )
+        return new_state, next_command
 
     if command_type == ReplSessionCommandType.APPEND_HISTORY:
-        return _with_command(state, ReplSessionCommandType.CHECK_COMPLETE)
+        new_state, next_command = _with_command(
+            state, ReplSessionCommandType.CHECK_COMPLETE
+        )
+        old_messages = state.messages if state.messages is not None else []
+        new_state = new_state.model_copy(
+            update={"messages": old_messages + (prev_command_result.new_messages or [])}
+        )
+        return new_state, next_command
 
     if command_type == ReplSessionCommandType.CHECK_COMPLETE:
-        if state.is_complete:
-            return _complete_and_exit(state)
+        if prev_command_result.is_complete:
+            new_state = state.model_copy(
+                update={"final_answer": prev_command_result.final_answer}
+            )
+            return _complete_and_exit(new_state)
 
         next_state = state.model_copy(
             update={"iteration_count": state.iteration_count + 1}
         )
-        if next_state.history_length > next_state.limits.history_limit:
+        if len(next_state.messages or []) > next_state.limits.history_limit:
             return _with_command(next_state, ReplSessionCommandType.COMPACTING)
         return _with_command(next_state, ReplSessionCommandType.CALL_LLM)
 
     if command_type == ReplSessionCommandType.COMPACTING:
-        return _with_command(state, ReplSessionCommandType.CALL_LLM)
+        new_state, next_command = _with_command(state, ReplSessionCommandType.CALL_LLM)
+        assert prev_command_result.compacted_messages is not None, (
+            "Compacting command result must include compacted_messages"
+        )
+        new_state = new_state.model_copy(
+            update={"messages": prev_command_result.compacted_messages}
+        )
+        return new_state, next_command
 
     return _with_command(state, ReplSessionCommandType.EXIT)
 
@@ -135,8 +163,8 @@ def reduce_repl_session(
         return check
 
     if prev_command_result is None:
-        if state.history_length > state.limits.history_limit:
+        if len(state.messages or []) > state.limits.history_limit:
             return _with_command(state, ReplSessionCommandType.COMPACTING)
         return _with_command(state, ReplSessionCommandType.CALL_LLM)
 
-    return _next_command_after_success(state, prev_command_result.command_type)
+    return _next_command_after_success(state, prev_command_result)

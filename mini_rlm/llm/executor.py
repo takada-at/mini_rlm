@@ -29,6 +29,15 @@ def _run_request_command(
 
     try:
         response_json = send_request(command.payload)
+        if (
+            "choices" not in response_json
+            or not isinstance(response_json["choices"], list)
+            or len(response_json["choices"]) == 0
+        ):
+            return CommandResult(
+                type=RequestResultType.INVALID_RESPONSE,
+                error_message="response JSON does not contain 'choices'",
+            )
         return CommandResult(
             type=RequestResultType.SUCCESS, response_json=response_json
         )

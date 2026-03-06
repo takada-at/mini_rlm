@@ -1,5 +1,6 @@
 import re
 
+from mini_rlm.repl.data_model import ReplResult
 from mini_rlm.repl.repl import execute_code
 
 
@@ -60,3 +61,36 @@ def find_final_answer(text: str, repl_state=None) -> str | None:
         return match.group(1).strip()
 
     return None
+
+
+def format_execution_result(result: ReplResult) -> str:
+    """
+    Format the execution result as a string for display.
+
+    Args:
+        result: The REPLResult object to format.
+    """
+    result_parts = []
+
+    if result.stdout:
+        result_parts.append(f"\n{result.stdout}")
+
+    if result.stderr:
+        result_parts.append(f"\n{result.stderr}")
+
+    # Show some key variables (excluding internal ones)
+    important_vars = {}
+    for key, value in result.locals.items():
+        if not key.startswith("_") and key not in [
+            "__builtins__",
+            "__name__",
+            "__doc__",
+        ]:
+            # Only show simple types or short representations
+            if isinstance(value, (str, int, float, bool, list, dict, tuple)):
+                important_vars[key] = ""
+
+    if important_vars:
+        result_parts.append(f"REPL variables: {list(important_vars.keys())}\n")
+
+    return "\n\n".join(result_parts) if result_parts else "No output"

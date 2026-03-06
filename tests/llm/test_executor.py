@@ -96,7 +96,7 @@ def test_execute_request_loop_uses_jitter_for_retry_sleep() -> None:
         calls.append(1)
         if len(calls) == 1:
             raise requests.Timeout("timeout")
-        return {"choices": []}
+        return {"choices": [{"message": {"role": "assistant", "content": "ok"}}]}
 
     def sleep_fn(seconds: float) -> None:
         sleep_calls.append(seconds)

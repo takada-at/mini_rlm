@@ -4,7 +4,7 @@ from typing import Any
 
 
 @dataclass
-class REPLResult:
+class ReplResult:
     stdout: str
     stderr: str
     locals: dict[str, Any]

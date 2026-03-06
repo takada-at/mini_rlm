@@ -34,7 +34,8 @@ def message_content_to_text(content: str | List[MessageContentPart]) -> str:
 def text_query(context: RequestContext, text: str) -> str:
     """Make a text query to the LLM API."""
     messages = [MessageContent(role="user", content=text)]
-    response_messages = make_api_request(context, messages)
+    response = make_api_request(context, messages)
+    response_messages = response.messages
     if response_messages:
         return message_content_to_text(response_messages[0].content)
     else:
@@ -49,7 +50,8 @@ def image_query(context: RequestContext, text: str, image_data: ImageData) -> st
         MessageContentPart(type="image", image_url=ImageURL(url=image_url)),
     ]
     messages = [MessageContent(role="user", content=message_content)]
-    response_messages = make_api_request(context, messages)
+    response = make_api_request(context, messages)
+    response_messages = response.messages
     if response_messages:
         return message_content_to_text(response_messages[0].content)
     else:
