@@ -2,8 +2,10 @@ import importlib
 import logging
 from pathlib import Path
 
+import pytest
 import requests
 
+from mini_rlm import debug_logger
 from mini_rlm.llm.data_model import Endpoint, RequestContext
 from mini_rlm.repl.repl import create_repl
 from mini_rlm.repl_session.data_model import (
@@ -16,15 +18,20 @@ from mini_rlm.repl_session.data_model import (
 )
 
 
-def test_execute_repl_session_loop_writes_debug_log(monkeypatch, tmp_path) -> None:
-    # give: ログファイル出力先を一時パスにし、executorを再ロードする
-    log_path = tmp_path / "mini_rlm_debug.log"
-    monkeypatch.setenv("MINI_RLM_LOG_FILE", str(log_path))
+@pytest.fixture(autouse=True)
+def reset_debug_logger_state(monkeypatch) -> None:
+    monkeypatch.setattr(debug_logger, "_initialized_log_path", None)
 
     logger = logging.getLogger("mini_rlm")
     for handler in list(logger.handlers):
         handler.close()
         logger.removeHandler(handler)
+
+
+def test_execute_repl_session_loop_writes_debug_log(monkeypatch, tmp_path) -> None:
+    # give: ログファイル出力先を初期化し、executorを再ロードする
+    log_path = tmp_path / "mini_rlm_debug.log"
+    debug_logger.initialize_log_path(log_path)
 
     executor = importlib.import_module("mini_rlm.repl_session.executor")
     executor = importlib.reload(executor)
@@ -79,6 +86,7 @@ def test_execute_repl_session_loop_writes_debug_log(monkeypatch, tmp_path) -> No
 
     # then: ログファイルにデバッグログが出力される
     assert final_state.status == ReplSessionStatus.COMPLETED
+    assert debug_logger.get_log_file_path() == log_path
     assert log_path.exists()
 
     log_text = log_path.read_text(encoding="utf-8")
@@ -109,11 +117,6 @@ def test_execute_repl_session_loop_continues_when_logger_setup_fails(
     monkeypatch,
 ) -> None:
     # give: logger初期化が毎回失敗しても、セッション自体は完了できるようにする
-    logger = logging.getLogger("mini_rlm")
-    for handler in list(logger.handlers):
-        handler.close()
-        logger.removeHandler(handler)
-
     executor = importlib.import_module("mini_rlm.repl_session.executor")
     executor = importlib.reload(executor)
 
@@ -154,7 +157,9 @@ def test_execute_repl_session_loop_continues_when_logger_setup_fails(
     monkeypatch.setattr(executor, "reduce_repl_session", fake_reduce_repl_session)
     monkeypatch.setattr(executor, "execute_call_llm", fake_execute_call_llm)
     monkeypatch.setattr(executor, "get_logger", fail_get_logger)
-    monkeypatch.setattr(executor, "get_log_file_path", lambda: Path("/tmp/unwritable.log"))
+    monkeypatch.setattr(
+        executor, "get_log_file_path", lambda: Path("/tmp/unwritable.log")
+    )
 
     repl = create_repl()
     request_context = RequestContext(
