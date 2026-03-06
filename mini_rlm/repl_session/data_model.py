@@ -1,6 +1,9 @@
 from enum import StrEnum
+from typing import List
 
 from pydantic import BaseModel
+
+from mini_rlm.llm.data_model import MessageContent, RequestContext
 
 
 class ReplSessionStatus(StrEnum):
@@ -69,3 +72,11 @@ class CommandResult(BaseModel):
     history_length_override: int | None = None
     is_complete: bool | None = None
     error_message: str | None = None
+
+
+class ReplSessionExecutorState(BaseModel):
+    request_context: RequestContext
+    limits: ReplSessionLimits
+    system_prompt: str
+    prompt: str
+    messages: List[MessageContent] | None = None

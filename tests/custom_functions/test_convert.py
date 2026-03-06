@@ -103,3 +103,22 @@ def test_description_with_leading_whitespace_is_dedented():
     # then: 共通インデントが除去された上で4スペース付きで出力される
     assert "    Dedented first line." in result
     assert "    Dedented second line." in result
+
+
+def test_argument_descriptions_are_included_in_args_section():
+    # given: 引数 description を持つ Function オブジェクト
+    func = FunctionBase(
+        name="search",
+        description="Search documents.",
+        arguments=[
+            {"name": "query", "description": "検索語", "type": str},
+            {"name": "limit", "description": "取得件数", "type": int},
+        ],
+        return_type=list,
+    )
+    # when: convert_function_to_string を呼ぶ
+    result = convert_function_to_string(func)
+    # then: docstring の Args セクションに引数 description が含まれる
+    assert "Args:" in result
+    assert "query (str): 検索語" in result
+    assert "limit (int): 取得件数" in result
