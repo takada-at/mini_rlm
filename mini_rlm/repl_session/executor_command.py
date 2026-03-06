@@ -92,7 +92,6 @@ def execute_append_history(
     return CommandResult(
         type=ReplSessionResultType.SUCCESS,
         command_type=command.type,
-        history_length_delta=len(iteration) + 1,
         new_messages=new_messages,
     )
 
@@ -158,7 +157,6 @@ def execute_compacting(
         return CommandResult(
             type=ReplSessionResultType.SUCCESS,
             command_type=command.type,
-            history_length_override=len(new_messages),
             compacted_messages=new_messages,
         )
     else:

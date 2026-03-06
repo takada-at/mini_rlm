@@ -59,8 +59,6 @@ class CommandResult(BaseModel):
     command_type: ReplSessionCommandType
     type: ReplSessionResultType
     consumed_tokens: int = 0
-    history_length_delta: int = 0
-    history_length_override: int | None = None
     last_llm_message: str | None = None
     repl_results: List[ReplSessionHistoryEntry] | None = None
     is_complete: bool | None = None
@@ -77,7 +75,6 @@ class ReplSessionState(BaseModel):
     current_time_seconds: float
     iteration_count: int = 0
     total_tokens: int = 0
-    history_length: int = 0
     error_count: int = 0
     is_complete: bool = False
     is_cancelled: bool = False

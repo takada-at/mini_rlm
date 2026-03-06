@@ -71,11 +71,6 @@ def _apply_result(state: ReplSessionState, result: CommandResult) -> ReplSession
     next_state = state.model_copy(
         update={
             "total_tokens": state.total_tokens + result.consumed_tokens,
-            "history_length": (
-                result.history_length_override
-                if result.history_length_override is not None
-                else state.history_length + result.history_length_delta
-            ),
             "is_complete": result.is_complete
             if result.is_complete is not None
             else state.is_complete,
@@ -130,7 +125,7 @@ def _next_command_after_success(
         next_state = state.model_copy(
             update={"iteration_count": state.iteration_count + 1}
         )
-        if next_state.history_length > next_state.limits.history_limit:
+        if len(next_state.messages or []) > next_state.limits.history_limit:
             return _with_command(next_state, ReplSessionCommandType.COMPACTING)
         return _with_command(next_state, ReplSessionCommandType.CALL_LLM)
 
@@ -168,7 +163,7 @@ def reduce_repl_session(
         return check
 
     if prev_command_result is None:
-        if state.history_length > state.limits.history_limit:
+        if len(state.messages or []) > state.limits.history_limit:
             return _with_command(state, ReplSessionCommandType.COMPACTING)
         return _with_command(state, ReplSessionCommandType.CALL_LLM)
 

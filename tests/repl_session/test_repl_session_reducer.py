@@ -75,8 +75,6 @@ def test_execute_code_update_repl_result() -> None:
     prev_result = CommandResult(
         command_type=ReplSessionCommandType.EXECUTE_CODE,
         type=ReplSessionResultType.SUCCESS,
-        consumed_tokens=5,
-        history_length_delta=3,
         repl_results=[
             ReplSessionHistoryEntry(
                 code="print('output')",
@@ -99,12 +97,15 @@ def test_execute_code_update_repl_result() -> None:
 
 def test_append_history_update_messages() -> None:
     # give: append_history成功後の結果
-    prev_state = build_state(last_command_type=ReplSessionCommandType.APPEND_HISTORY)
+    prev_state = build_state(last_command_type=ReplSessionCommandType.APPEND_HISTORY,
+                             messages=[
+                                    MessageContent(role="user", content="start"),
+                             ]
+                             )
     prev_result = CommandResult(
         command_type=ReplSessionCommandType.APPEND_HISTORY,
         type=ReplSessionResultType.SUCCESS,
         consumed_tokens=0,
-        history_length_delta=2,
         new_messages=[
             MessageContent(
                 role="user",
@@ -120,14 +121,19 @@ def test_append_history_update_messages() -> None:
     next_state, _ = reduce_repl_session(prev_state, prev_result)
     # then: messagesが更新される
     assert next_state.messages is not None
-    assert len(next_state.messages) == 2
-    assert next_state.messages[0].content == "print('hello')"
-    assert next_state.messages[1].content == "print('world')"
+    assert len(next_state.messages) == 3
+    assert next_state.messages[0].content == "start"
+    assert next_state.messages[1].content == "print('hello')"
+    assert next_state.messages[2].content == "print('world')"
 
 
 def test_reduce_repl_session_history_over_limit_returns_compacting() -> None:
     # give: 履歴長が上限を超えている
-    prev_state = build_state(history_length=6)
+    prev_state = build_state(
+        messages=[
+            MessageContent(role="user", content=f"message {i}") for i in range(11)
+        ],
+    )
     # when: reducerを実行する
     next_state, command = reduce_repl_session(prev_state, None)
     # then: compactingコマンドが返る
@@ -232,3 +238,22 @@ def test_reduce_repl_session_cancelled_returns_exit() -> None:
     # then: cancelledでexitする
     assert command.type == ReplSessionCommandType.EXIT
     assert next_state.termination_reason == TerminationReason.CANCELLED
+
+
+def test_compaction_command_truncates_messages() -> None:
+    # give: compactingコマンド実行時に履歴長が上限を超えている
+    prev_state = build_state(
+        history_length=11, last_command_type=ReplSessionCommandType.COMPACTING
+    )
+    command_result = CommandResult(
+        command_type=ReplSessionCommandType.COMPACTING,
+        type=ReplSessionResultType.SUCCESS,
+        compacted_messages=[
+            MessageContent(role="user", content=f"message {i}") for i in range(5)
+        ],
+    )
+    # when: reducerを実行する
+    next_state, command = reduce_repl_session(prev_state, command_result)
+    # then: messagesが履歴上限の半分にトランケートされる
+    assert next_state.messages is not None
+    assert len(next_state.messages) == 5
