@@ -46,3 +46,6 @@ make lint
 make typecheck
 make test
 ```
+
+## コードレビュー
+コードレビュー時は、英語で思考し、日本語でコメントしてください。
