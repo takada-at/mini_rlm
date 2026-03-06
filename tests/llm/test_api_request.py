@@ -32,10 +32,11 @@ def test_make_api_request_retries_timeout_and_returns_choices(
 
     # when: APIリクエスト関数を実行する
     result = make_api_request(context, messages)
+    res_messages = result.messages
 
     # then: リトライ後の成功結果を返す
-    assert len(result) == 1
-    assert result[0].role == "assistant"
+    assert len(res_messages) == 1
+    assert res_messages[0].role == "assistant"
     assert session.request.call_count == 2
 
 

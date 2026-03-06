@@ -56,6 +56,7 @@ class RequestResultType(StrEnum):
     TIMEOUT = "timeout"
     HTTP_ERROR = "http_error"
     NETWORK_ERROR = "network_error"
+    INVALID_RESPONSE = "invalid_response"
     SKIPPED = "skipped"
 
 
@@ -97,3 +98,8 @@ class CommandResult(BaseModel):
     status_code: int | None = None
     response_json: Dict[str, Any] | None = None
     error_message: str | None = None
+
+
+class APIRequestResult(BaseModel):
+    response_json: Dict[str, Any]
+    messages: List[MessageContent]

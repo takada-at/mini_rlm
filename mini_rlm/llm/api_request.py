@@ -3,6 +3,7 @@ import time
 from typing import Any, Dict, List
 
 from mini_rlm.llm.data_model import (
+    APIRequestResult,
     MessageContent,
     RequestContext,
     RequestPayload,
@@ -20,7 +21,44 @@ def dump_messages(messages: List[MessageContent]) -> List[Dict[str, Any]]:
 
 def make_api_request(
     context: RequestContext, messages: List[MessageContent]
-) -> List[MessageContent]:
+) -> APIRequestResult:
+    """Make an API request to the endpoint specified in *context* with the given *messages*."""
+    final_state = run_api_request(context, messages)
+    if (
+        final_state.status != RequestStatus.SUCCEEDED
+        or final_state.response_json is None
+    ):
+        error_type = (
+            final_state.last_error_type.value
+            if final_state.last_error_type is not None
+            else "unknown"
+        )
+        error_message = final_state.last_error_message or "request failed"
+        raise RuntimeError(f"LLM API request failed: {error_type}: {error_message}")
+
+    response_data = final_state.response_json
+    if (
+        "choices" in response_data
+        and isinstance(response_data["choices"], list)
+        and len(response_data["choices"]) > 0
+    ):
+        return APIRequestResult(
+            response_json=response_data,
+            messages=[
+                MessageContent.model_validate(choice["message"])
+                for choice in response_data["choices"]
+            ],
+        )
+    else:
+        return APIRequestResult(
+            response_json=response_data,
+            messages=[],
+        )
+
+
+def run_api_request(
+    context: RequestContext, messages: List[MessageContent]
+) -> RequestState:
     """Make an API request to the endpoint specified in *context* with the given *messages*."""
     dict_messages = dump_messages(messages)
     if context.messages:
@@ -66,27 +104,4 @@ def make_api_request(
         sleep_fn=time.sleep,
         random_fn=random.random,
     )
-    if (
-        final_state.status != RequestStatus.SUCCEEDED
-        or final_state.response_json is None
-    ):
-        error_type = (
-            final_state.last_error_type.value
-            if final_state.last_error_type is not None
-            else "unknown"
-        )
-        error_message = final_state.last_error_message or "request failed"
-        raise RuntimeError(f"LLM API request failed: {error_type}: {error_message}")
-
-    response_data = final_state.response_json
-    if (
-        "choices" in response_data
-        and isinstance(response_data["choices"], list)
-        and len(response_data["choices"]) > 0
-    ):
-        return [
-            MessageContent.model_validate(choice["message"])
-            for choice in response_data["choices"]
-        ]
-    else:
-        return []
+    return final_state

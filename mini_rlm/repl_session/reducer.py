@@ -86,20 +86,45 @@ def _apply_result(state: ReplSessionState, result: CommandResult) -> ReplSession
 
 def _next_command_after_success(
     state: ReplSessionState,
-    command_type: ReplSessionCommandType,
+    prev_command_result: CommandResult,
 ) -> tuple[ReplSessionState, ReplSessionCommand]:
+    command_type = prev_command_result.command_type
     if command_type == ReplSessionCommandType.CALL_LLM:
-        return _with_command(state, ReplSessionCommandType.EXECUTE_CODE)
+        new_state, next_command = _with_command(
+            state, ReplSessionCommandType.EXECUTE_CODE
+        )
+        new_state = new_state.model_copy(
+            update={
+                "last_llm_message": prev_command_result.last_llm_message,
+                "repl_results": None,
+            }
+        )
+        return new_state, next_command
 
     if command_type == ReplSessionCommandType.EXECUTE_CODE:
-        return _with_command(state, ReplSessionCommandType.APPEND_HISTORY)
+        new_state, next_command = _with_command(
+            state, ReplSessionCommandType.APPEND_HISTORY
+        )
+        new_state = new_state.model_copy(
+            update={"repl_results": prev_command_result.repl_results}
+        )
+        return new_state, next_command
 
     if command_type == ReplSessionCommandType.APPEND_HISTORY:
-        return _with_command(state, ReplSessionCommandType.CHECK_COMPLETE)
+        new_state, next_command = _with_command(
+            state, ReplSessionCommandType.CHECK_COMPLETE
+        )
+        new_state = new_state.model_copy(
+            update={"messages": prev_command_result.new_messages}
+        )
+        return new_state, next_command
 
     if command_type == ReplSessionCommandType.CHECK_COMPLETE:
-        if state.is_complete:
-            return _complete_and_exit(state)
+        if prev_command_result.is_complete:
+            new_state = state.model_copy(
+                update={"final_answer": prev_command_result.final_answer}
+            )
+            return _complete_and_exit(new_state)
 
         next_state = state.model_copy(
             update={"iteration_count": state.iteration_count + 1}
@@ -139,4 +164,4 @@ def reduce_repl_session(
             return _with_command(state, ReplSessionCommandType.COMPACTING)
         return _with_command(state, ReplSessionCommandType.CALL_LLM)
 
-    return _next_command_after_success(state, prev_command_result.command_type)
+    return _next_command_after_success(state, prev_command_result)

@@ -20,7 +20,11 @@ def _compute_retry_delay_seconds(prev_state: RequestState, next_attempt: int) ->
 
 
 def _is_retryable(prev_state: RequestState, result: CommandResult) -> bool:
-    if result.type in (RequestResultType.TIMEOUT, RequestResultType.NETWORK_ERROR):
+    if result.type in (
+        RequestResultType.TIMEOUT,
+        RequestResultType.NETWORK_ERROR,
+        RequestResultType.INVALID_RESPONSE,
+    ):
         return True
 
     if result.type == RequestResultType.HTTP_ERROR and result.status_code is not None:

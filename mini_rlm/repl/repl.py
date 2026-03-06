@@ -11,7 +11,7 @@ import uuid
 from pathlib import Path
 from typing import IO, Any
 
-from mini_rlm.repl.data_model import REPLResult, ReplState
+from mini_rlm.repl.data_model import ReplResult, ReplState
 
 # =============================================================================
 # Safe Builtins
@@ -259,8 +259,8 @@ def _restore_scaffold(state: ReplState) -> None:
         state.locals["history"] = state.locals["history_0"]
 
 
-def execute_code(state: ReplState, code: str) -> REPLResult:
-    """Execute *code* in the persistent sandbox and return a REPLResult."""
+def execute_code(state: ReplState, code: str) -> ReplResult:
+    """Execute *code* in the persistent sandbox and return a ReplResult."""
     start_time = time.perf_counter()
 
     with _capture_output(state) as (stdout_buf, stderr_buf), _temp_cwd(state):
@@ -283,7 +283,7 @@ def execute_code(state: ReplState, code: str) -> REPLResult:
     final_answer = state.last_final_answer
     state.last_final_answer = None
 
-    return REPLResult(
+    return ReplResult(
         stdout=stdout,
         stderr=stderr,
         locals=state.locals.copy(),

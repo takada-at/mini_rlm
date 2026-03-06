@@ -1,6 +1,9 @@
+from mini_rlm.llm.data_model import MessageContent
+from mini_rlm.repl.data_model import ReplResult
 from mini_rlm.repl_session.data_model import (
     CommandResult,
     ReplSessionCommandType,
+    ReplSessionHistoryEntry,
     ReplSessionLimits,
     ReplSessionResultType,
     ReplSessionState,
@@ -51,6 +54,77 @@ def test_reduce_repl_session_success_path_advances_commands() -> None:
     assert next_state.total_tokens == 10
 
 
+def test_call_llm_update_last_llm_message() -> None:
+    # give: call_llm成功後の結果
+    prev_state = build_state(last_command_type=ReplSessionCommandType.CALL_LLM)
+    prev_result = CommandResult(
+        command_type=ReplSessionCommandType.CALL_LLM,
+        type=ReplSessionResultType.SUCCESS,
+        consumed_tokens=10,
+        last_llm_message="Hello, world!",
+    )
+    # when: reducerを実行する
+    next_state, _ = reduce_repl_session(prev_state, prev_result)
+    # then: last_llm_messageが更新される
+    assert next_state.last_llm_message == "Hello, world!"
+
+
+def test_execute_code_update_repl_result() -> None:
+    # give: execute_code成功後の結果
+    prev_state = build_state(last_command_type=ReplSessionCommandType.EXECUTE_CODE)
+    prev_result = CommandResult(
+        command_type=ReplSessionCommandType.EXECUTE_CODE,
+        type=ReplSessionResultType.SUCCESS,
+        consumed_tokens=5,
+        history_length_delta=3,
+        repl_results=[
+            ReplSessionHistoryEntry(
+                code="print('output')",
+                repl_result=ReplResult(
+                    stdout="output", locals={"x": 1}, stderr="", execution_time=0.1
+                ),
+            )
+        ],
+    )
+    # when: reducerを実行する
+    next_state, _ = reduce_repl_session(prev_state, prev_result)
+    # then: repl_resultが更新される
+    assert next_state.repl_results is not None
+    assert len(next_state.repl_results) == 1
+    assert next_state.repl_results[0] is not None
+    assert next_state.repl_results[0].repl_result is not None
+    assert next_state.repl_results[0].repl_result.stdout == "output"
+    assert next_state.repl_results[0].repl_result.locals == {"x": 1}
+
+
+def test_append_history_update_messages() -> None:
+    # give: append_history成功後の結果
+    prev_state = build_state(last_command_type=ReplSessionCommandType.APPEND_HISTORY)
+    prev_result = CommandResult(
+        command_type=ReplSessionCommandType.APPEND_HISTORY,
+        type=ReplSessionResultType.SUCCESS,
+        consumed_tokens=0,
+        history_length_delta=2,
+        new_messages=[
+            MessageContent(
+                role="user",
+                content="print('hello')",
+            ),
+            MessageContent(
+                role="user",
+                content="print('world')",
+            ),
+        ],
+    )
+    # when: reducerを実行する
+    next_state, _ = reduce_repl_session(prev_state, prev_result)
+    # then: messagesが更新される
+    assert next_state.messages is not None
+    assert len(next_state.messages) == 2
+    assert next_state.messages[0].content == "print('hello')"
+    assert next_state.messages[1].content == "print('world')"
+
+
 def test_reduce_repl_session_history_over_limit_returns_compacting() -> None:
     # give: 履歴長が上限を超えている
     prev_state = build_state(history_length=6)
@@ -89,6 +163,7 @@ def test_reduce_repl_session_check_complete_success_and_complete_returns_complet
     prev_result = CommandResult(
         command_type=ReplSessionCommandType.CHECK_COMPLETE,
         type=ReplSessionResultType.SUCCESS,
+        final_answer="final answer",
         is_complete=True,
     )
     # when: reducerを実行する
