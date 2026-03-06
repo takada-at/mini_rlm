@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 from mini_rlm.llm.data_model import MessageContent
 from mini_rlm.repl.data_model import ReplResult
+from mini_rlm.llm.data_model import MessageContent, RequestContext
 
 
 class ReplSessionStatus(StrEnum):
@@ -84,5 +85,30 @@ class ReplSessionState(BaseModel):
     repl_results: List[ReplSessionHistoryEntry] | None = None
     last_command_type: ReplSessionCommandType | None = None
     termination_reason: TerminationReason | None = None
+<<<<<<< HEAD
     messages: List[MessageContent] | None = None
     final_answer: str | None = None
+=======
+
+
+class ReplSessionCommand(BaseModel):
+    type: ReplSessionCommandType
+
+
+class CommandResult(BaseModel):
+    command_type: ReplSessionCommandType
+    type: ReplSessionResultType
+    consumed_tokens: int = 0
+    history_length_delta: int = 0
+    history_length_override: int | None = None
+    is_complete: bool | None = None
+    error_message: str | None = None
+
+
+class ReplSessionExecutorState(BaseModel):
+    request_context: RequestContext
+    limits: ReplSessionLimits
+    system_prompt: str
+    prompt: str
+    messages: List[MessageContent] | None = None
+>>>>>>> origin/main

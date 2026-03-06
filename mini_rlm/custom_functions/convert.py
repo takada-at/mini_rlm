@@ -46,13 +46,29 @@ def convert_function_to_string(func: FunctionBase) -> str:
         str: The string representation of the Function object.
     """
     args_str = ", ".join([f"{arg.name}: {arg.type.__name__}" for arg in func.arguments])
+
+    doc_lines = []
     if func.description:
-        docstring = '"""' + "\n" + func.description + '\n"""'
-        indented_docstring = ["    " + line for line in dedent(docstring).splitlines()]
+        doc_lines.extend(dedent(func.description).strip("\n").splitlines())
+
+    arg_desc_lines = [
+        f"{arg.name} ({arg.type.__name__}): {arg.description}"
+        for arg in func.arguments
+        if arg.description
+    ]
+    if arg_desc_lines:
+        if doc_lines:
+            doc_lines.append("")
+        doc_lines.append("Args:")
+        doc_lines.extend([f"    {line}" for line in arg_desc_lines])
+
+    if doc_lines:
+        docstring = '"""' + "\n" + "\n".join(doc_lines) + '\n"""'
+        indented_docstring = ["    " + line for line in docstring.splitlines()]
     else:
         indented_docstring = []
     ret_type_str = func.return_type.__name__ if func.return_type else "None"
-    return f"def {func.name}({args_str}) -> {ret_type_str}:\n{'\n'.join(indented_docstring)}\n\n"
+    return f"def {func.name}({args_str}) -> {ret_type_str}:\n{'\n'.join(indented_docstring)}\n...\n"
 
 
 def convert_function_collection_to_string(func_collection: FunctionCollection) -> str:
