@@ -15,6 +15,7 @@ from mini_rlm.repl_session.reducer import reduce_repl_session
 
 def build_state(**updates: object) -> ReplSessionState:
     base = ReplSessionState(
+        prompt="test prompt",
         status=ReplSessionStatus.RUNNING,
         limits=ReplSessionLimits(
             token_limit=100,
