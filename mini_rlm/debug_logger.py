@@ -18,13 +18,22 @@ def get_logger() -> logging.Logger:
     if logger.handlers:
         return logger
 
-    log_path = _resolve_log_path()
-    log_path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        log_path = _resolve_log_path()
+        log_path.parent.mkdir(parents=True, exist_ok=True)
 
-    formatter = logging.Formatter("%(asctime)s %(levelname)s [%(name)s] %(message)s")
-    handler = logging.FileHandler(log_path, encoding="utf-8")
-    handler.setLevel(logging.DEBUG)
-    handler.setFormatter(formatter)
+        formatter = logging.Formatter(
+            "%(asctime)s %(levelname)s [%(name)s] %(message)s"
+        )
+        handler = logging.FileHandler(log_path, encoding="utf-8")
+        handler.setLevel(logging.DEBUG)
+        handler.setFormatter(formatter)
+    except OSError:
+        # Debug logging must not block the REPL session from starting.
+        logger.addHandler(logging.NullHandler())
+        logger.setLevel(logging.DEBUG)
+        logger.propagate = False
+        return logger
 
     logger.addHandler(handler)
     logger.setLevel(logging.DEBUG)

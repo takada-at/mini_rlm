@@ -23,7 +23,12 @@ from mini_rlm.repl_session.reducer import reduce_repl_session
 
 Handler = Callable[[ReplSessionState], CommandResult]
 
-logger = get_logger()
+
+def _debug(message: str, *args: object) -> None:
+    try:
+        get_logger().debug(message, *args)
+    except OSError:
+        return
 
 
 def _build_result_log_fields(result: CommandResult) -> dict[str, object]:
@@ -40,7 +45,7 @@ def _build_result_log_fields(result: CommandResult) -> dict[str, object]:
 
 
 def _log_loop_state(state: ReplSessionState, prev_result: CommandResult | None) -> None:
-    logger.debug(
+    _debug(
         "repl_session.loop state status=%s iteration=%s total_tokens=%s errors=%s prev_result=%s",
         state.status,
         state.iteration_count,
@@ -51,11 +56,11 @@ def _log_loop_state(state: ReplSessionState, prev_result: CommandResult | None) 
 
 
 def _log_command(command_type: ReplSessionCommandType) -> None:
-    logger.debug("repl_session.command type=%s", command_type)
+    _debug("repl_session.command type=%s", command_type)
 
 
 def _log_result(result: CommandResult) -> None:
-    logger.debug(
+    _debug(
         "repl_session.result command=%s fields=%s",
         result.command_type,
         _build_result_log_fields(result),
@@ -63,7 +68,7 @@ def _log_result(result: CommandResult) -> None:
 
 
 def _log_session_end(state: ReplSessionState) -> None:
-    logger.debug(
+    _debug(
         "repl_session.end status=%s termination_reason=%s iterations=%s total_tokens=%s final_answer_present=%s",
         state.status,
         state.termination_reason,
@@ -78,7 +83,7 @@ def execute_repl_session_loop(
     request_context: RequestContext,
     prompt: str,
 ) -> ReplSessionState:
-    logger.debug(
+    _debug(
         "repl_session.start prompt_length=%s log_file=%s",
         len(prompt),
         get_log_file_path(),
