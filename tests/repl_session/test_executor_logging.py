@@ -16,6 +16,7 @@ from mini_rlm.repl_session.data_model import (
     ReplSessionState,
     ReplSessionStatus,
 )
+from mini_rlm.repl_setup.data_model import ReplContext
 
 
 @pytest.fixture(autouse=True)
@@ -79,7 +80,11 @@ def test_execute_repl_session_loop_writes_debug_log(monkeypatch, tmp_path) -> No
 
     # when: repl_sessionループを実行する
     final_state = executor.execute_repl_session_loop(
-        repl=repl,
+        repl_context=ReplContext(
+            request_context=request_context,
+            repl_state=repl,
+            functions=None,
+        ),
         request_context=request_context,
         prompt="test prompt",
     )
@@ -169,7 +174,11 @@ def test_execute_repl_session_loop_continues_when_logger_setup_fails(
 
     # when: logger初期化に失敗する状態でrepl_sessionループを実行する
     final_state = executor.execute_repl_session_loop(
-        repl=repl,
+        repl_context=ReplContext(
+            request_context=request_context,
+            repl_state=repl,
+            functions=None,
+        ),
         request_context=request_context,
         prompt="test prompt",
     )

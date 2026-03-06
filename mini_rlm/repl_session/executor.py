@@ -3,7 +3,6 @@ from datetime import datetime
 
 from mini_rlm.debug_logger import get_log_file_path, get_logger
 from mini_rlm.llm.data_model import RequestContext
-from mini_rlm.repl.data_model import ReplState
 from mini_rlm.repl_session.data_model import (
     CommandResult,
     ReplSessionCommandType,
@@ -20,6 +19,7 @@ from mini_rlm.repl_session.executor_command import (
     execute_execute_command,
 )
 from mini_rlm.repl_session.reducer import reduce_repl_session
+from mini_rlm.repl_setup.data_model import ReplContext
 
 Handler = Callable[[ReplSessionState], CommandResult]
 
@@ -79,10 +79,14 @@ def _log_session_end(state: ReplSessionState) -> None:
 
 
 def execute_repl_session_loop(
-    repl: ReplState,
+    repl_context: ReplContext,
     request_context: RequestContext,
     prompt: str,
 ) -> ReplSessionState:
+    """
+    Execute a REPL session loop with the given *repl_context* and *request_context*, starting with *prompt*.
+    The loop will continue until a termination condition is met (e.g. max iterations, timeout, or explicit exit command).
+    """
     _debug(
         "repl_session.start prompt_length=%s log_file=%s",
         len(prompt),
@@ -125,7 +129,9 @@ def execute_repl_session_loop(
             continue
 
         if command.type == ReplSessionCommandType.EXECUTE_CODE:
-            prev_result = execute_execute_command(command, repl, state)
+            prev_result = execute_execute_command(
+                command, repl_context.repl_state, state
+            )
             _log_result(prev_result)
             continue
 

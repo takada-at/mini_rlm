@@ -9,7 +9,7 @@ import tempfile
 import time
 import uuid
 from pathlib import Path
-from typing import IO, Any
+from typing import IO, Any, Dict
 
 from mini_rlm.repl.data_model import ReplResult, ReplState
 
@@ -117,7 +117,7 @@ SAFE_BUILTINS: dict[str, Any] = {
 
 def create_repl(
     setup_code: str | None = None,
-    context_payload: dict | list | str | None = None,
+    context_payload: Dict[str, Any] | None = None,
 ) -> ReplState:
     """Create and initialise a new REPL state."""
     temp_dir = tempfile.mkdtemp(prefix=f"repl_env_{uuid.uuid4()}_")
@@ -299,7 +299,7 @@ def execute_code(state: ReplState, code: str) -> ReplResult:
 
 def add_context(
     state: ReplState,
-    context_payload: dict | list | str,
+    context_payload: Dict[str, Any] | list | str | None,
     context_index: int | None = None,
 ) -> int:
     """Load *context_payload* into the sandbox as ``context_<index>``."""
@@ -308,21 +308,13 @@ def add_context(
 
     var_name = f"context_{context_index}"
 
-    if isinstance(context_payload, str):
-        context_path = os.path.join(state.temp_dir, f"context_{context_index}.txt")
-        with open(context_path, "w") as f:
-            f.write(context_payload)
-        execute_code(
-            state, f"with open(r'{context_path}', 'r') as f:\n    {var_name} = f.read()"
-        )
-    else:
-        context_path = os.path.join(state.temp_dir, f"context_{context_index}.json")
-        with open(context_path, "w") as f:
-            json.dump(context_payload, f)
-        execute_code(
-            state,
-            f"import json\nwith open(r'{context_path}', 'r') as f:\n    {var_name} = json.load(f)",
-        )
+    context_path = os.path.join(state.temp_dir, f"context_{context_index}.json")
+    with open(context_path, "w") as f:
+        json.dump(context_payload, f)
+    execute_code(
+        state,
+        f"import json\nwith open(r'{context_path}', 'r') as f:\n    {var_name} = json.load(f)",
+    )
 
     if context_index == 0:
         execute_code(state, f"context = {var_name}")
@@ -331,14 +323,14 @@ def add_context(
     return context_index
 
 
-def load_context(state: ReplState, context_payload: dict | list | str) -> None:
+def load_context(state: ReplState, context_payload: Dict[str, Any] | None) -> None:
     """Shorthand: load *context_payload* as ``context_0`` / ``context``."""
     add_context(state, context_payload, 0)
 
 
 def add_history(
     state: ReplState,
-    message_history: list[dict[str, Any]],
+    message_history: list[Dict[str, Any]],
     history_index: int | None = None,
 ) -> int:
     """Store *message_history* as ``history_<index>`` in the sandbox locals."""

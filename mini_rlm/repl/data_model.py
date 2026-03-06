@@ -1,10 +1,11 @@
-from dataclasses import dataclass, field
+from dataclasses import field
 from threading import Lock
 from typing import Any
 
+from pydantic import BaseModel, ConfigDict
 
-@dataclass
-class ReplResult:
+
+class ReplResult(BaseModel):
     stdout: str
     stderr: str
     locals: dict[str, Any]
@@ -12,8 +13,9 @@ class ReplResult:
     final_answer: str | None = None
 
 
-@dataclass
-class ReplState:
+class ReplState(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     globals: dict[str, Any] = field(default_factory=dict)
     locals: dict[str, Any] = field(default_factory=dict)
     temp_dir: str = ""
