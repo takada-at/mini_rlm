@@ -1,8 +1,10 @@
+import traceback
 from collections.abc import Callable
 from typing import Any
 
 import requests
 
+from mini_rlm.debug_logger import get_logger
 from mini_rlm.llm.data_model import (
     CommandResult,
     RequestCommand,
@@ -22,6 +24,8 @@ def _run_request_command(
     command: RequestCommand,
     send_request: Callable[[RequestPayload], dict[str, Any]],
 ) -> CommandResult:
+    logger = get_logger()
+    logger.debug(f"Executing request command: {command.type}")
     if command.type != RequestCommandType.REQUEST or command.payload is None:
         return CommandResult(
             type=RequestResultType.SKIPPED, error_message="invalid command"
@@ -42,18 +46,24 @@ def _run_request_command(
             type=RequestResultType.SUCCESS, response_json=response_json
         )
     except requests.Timeout as error:
+        logger.warning(f"Request timed out: {error}")
         return CommandResult(
             type=RequestResultType.TIMEOUT,
             error_message=_normalize_error_message(error),
         )
     except requests.HTTPError as error:
         status_code = error.response.status_code if error.response is not None else None
+        logger.warning(f"HTTP error occurred: {error}, status_code: {status_code}")
+        traceback_str = traceback.format_exc()
+        logger.debug(f"Traceback for HTTP error: {traceback_str}")
         return CommandResult(
             type=RequestResultType.HTTP_ERROR,
             status_code=status_code,
             error_message=_normalize_error_message(error),
         )
     except requests.RequestException as error:
+        traceback_str = traceback.format_exc()
+        logger.error(f"Network error occurred: {error}, traceback: {traceback_str}")
         return CommandResult(
             type=RequestResultType.NETWORK_ERROR,
             error_message=_normalize_error_message(error),
