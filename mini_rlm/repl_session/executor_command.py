@@ -25,8 +25,9 @@ def execute_call_llm(
         role="system",
         content="You are a helpful assistant for executing code and managing a REPL session.",
     )
+    user_message = MessageContent(role="user", content=session_state.prompt)
     history = session_state.messages or []
-    messages = [system_message] + history
+    messages = [system_message, user_message] + history
     res = make_api_request(
         context=request_context,
         messages=messages,

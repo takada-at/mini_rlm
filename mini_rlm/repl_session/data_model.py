@@ -69,6 +69,7 @@ class CommandResult(BaseModel):
 
 
 class ReplSessionState(BaseModel):
+    prompt: str
     status: ReplSessionStatus
     limits: ReplSessionLimits
     started_at_seconds: float

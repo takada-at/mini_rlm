@@ -26,8 +26,10 @@ Handler = Callable[[ReplSessionState], CommandResult]
 def execute_repl_session_loop(
     repl: ReplState,
     request_context: RequestContext,
+    prompt: str,
 ) -> ReplSessionState:
     state = ReplSessionState(
+        prompt=prompt,
         status=ReplSessionStatus.RUNNING,
         limits=ReplSessionLimits(
             token_limit=1_000_000,

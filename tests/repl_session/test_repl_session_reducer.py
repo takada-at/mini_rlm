@@ -97,11 +97,12 @@ def test_execute_code_update_repl_result() -> None:
 
 def test_append_history_update_messages() -> None:
     # give: append_history成功後の結果
-    prev_state = build_state(last_command_type=ReplSessionCommandType.APPEND_HISTORY,
-                             messages=[
-                                    MessageContent(role="user", content="start"),
-                             ]
-                             )
+    prev_state = build_state(
+        last_command_type=ReplSessionCommandType.APPEND_HISTORY,
+        messages=[
+            MessageContent(role="user", content="start"),
+        ],
+    )
     prev_result = CommandResult(
         command_type=ReplSessionCommandType.APPEND_HISTORY,
         type=ReplSessionResultType.SUCCESS,
