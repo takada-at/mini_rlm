@@ -66,7 +66,16 @@ def create_query_image_llm(
 
 query_image_llm_factory = FunctionFactory(
     name="query_image_llm",
-    description="Query the LLM with text and image input",
+    description="""Query the LLM with text and image input.
+Usage:
+```
+result = query_image_llm(
+    text="Describe the image",
+    image_data=open_image_data("path/to/image.jpg"),
+)
+print(result)
+```
+""",
     arguments=[
         Argument(name="text", description="Text input for the LLM", type=str),
         Argument(

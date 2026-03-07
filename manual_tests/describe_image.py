@@ -27,7 +27,7 @@ from mini_rlm.llm import (  # noqa: E402
 ENDPOINT_ENV = "MINI_RLM_LLM_ENDPOINT"
 API_KEY_ENV = "MINI_RLM_LLM_API_KEY"
 MODEL_ENV = "MINI_RLM_LLM_MODEL"
-DEFAULT_PROMPT = "Please describe this image."
+DEFAULT_PROMPT = "Please describe this image({image_path})."
 
 
 def parse_args() -> argparse.Namespace:
@@ -118,7 +118,7 @@ def main() -> None:
     )
     messages = create_messages(
         image_path=args.image_path,
-        prompt=args.prompt,
+        prompt=args.prompt.format(image_path=args.image_path),
         detail=args.detail,
     )
     result = make_api_request(context=context, messages=messages)

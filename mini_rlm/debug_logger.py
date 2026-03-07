@@ -1,9 +1,10 @@
 import logging
 import os
+from datetime import datetime
 from pathlib import Path
 
 _LOGGER_NAME = "mini_rlm"
-_DEFAULT_LOG_PATH = "mini_rlm_debug.log"
+_DEFAULT_LOG_PATH = Path(__file__).parent.parent / "logs"
 _initialized_log_path: Path | None = None
 
 
@@ -19,12 +20,12 @@ def _resolve_log_path() -> Path:
 
 def initialize_log_path(log_path: str | Path | None = None) -> Path:
     global _initialized_log_path
-
     if log_path is None:
-        resolved_log_path = _resolve_log_path()
+        resolved_log_base_path = _resolve_log_path()
     else:
-        resolved_log_path = Path(log_path)
-
+        resolved_log_base_path = Path(log_path)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    resolved_log_path = resolved_log_base_path / f"debug_{timestamp}.log"
     _initialized_log_path = resolved_log_path
     resolved_log_path.parent.mkdir(parents=True, exist_ok=True)
     return resolved_log_path

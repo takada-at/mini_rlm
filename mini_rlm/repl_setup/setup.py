@@ -7,6 +7,7 @@ from mini_rlm.custom_functions import (
     FunctionFactory,
     image_function_collection,
 )
+from mini_rlm.debug_logger import get_logger
 from mini_rlm.llm.data_model import RequestContext
 from mini_rlm.repl import add_file, add_function, create_repl
 from mini_rlm.repl_setup.data_model import ReplContext
@@ -29,13 +30,16 @@ def setup_repl(
                 add_file(state, file_path.name, f)
     if functions is None:
         functions = image_function_collection()
+    logger = get_logger()
     for func in functions.functions:
         if isinstance(func, FunctionFactory):
             pyfunc = func.factory(request_context)
         else:
             assert isinstance(func, Function)
             pyfunc = func.function
+        assert callable(pyfunc), f"Function {func.name} is not callable"
         add_function(state, func.name, pyfunc)
+        logger.debug(f"Added function to REPL: {func.name}")
     return ReplContext(
         request_context=request_context,
         repl_state=state,

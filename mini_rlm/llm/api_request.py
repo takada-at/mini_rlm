@@ -2,6 +2,7 @@ import random
 import time
 from typing import Any, Dict, List
 
+from mini_rlm.debug_logger import get_logger
 from mini_rlm.llm.data_model import (
     APIRequestResult,
     MessageContent,
@@ -104,10 +105,13 @@ def run_api_request(
         payload=payload,
         retry_policy=retry_policy,
     )
+    logger = get_logger()
 
     def send_request(request_payload: RequestPayload) -> Dict[str, Any]:
-        print(
-            f"Sending request to {request_payload.url} with body: {request_payload.body}"
+        logger.debug(
+            "Sending request to %s with %s message(s)",
+            request_payload.url,
+            len(request_payload.body.get("messages", [])),
         )
         response = context.session.request(
             "POST",

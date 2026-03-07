@@ -1,6 +1,7 @@
 from collections.abc import Callable
 from datetime import datetime
 
+from mini_rlm.code_block import format_execution_result
 from mini_rlm.debug_logger import get_log_file_path, get_logger
 from mini_rlm.llm import RequestContext
 from mini_rlm.repl_session.data_model import (
@@ -78,6 +79,24 @@ def _log_session_end(state: ReplSessionState) -> None:
     )
 
 
+def _log_code_execution(result: CommandResult) -> None:
+    if result.repl_results is None:
+        return
+    _debug("repl_session.code_execution result_count=%s", len(result.repl_results))
+    for entry in result.repl_results:
+        _debug(
+            "code--\n```\n%s\n```\n",
+            entry.code,
+        )
+        if entry.repl_result is None:
+            _debug("result--\n```\n%s\n```\n", "No REPL result")
+            continue
+        _debug(
+            "result--\n```\n%s\n```\n",
+            format_execution_result(entry.repl_result),
+        )
+
+
 def execute_repl_session_loop(
     repl_context: ReplContext,
     prompt: str,
@@ -131,7 +150,7 @@ def execute_repl_session_loop(
         limits=ReplSessionLimits(
             token_limit=1_000_000,
             iteration_limit=100,
-            timeout_seconds=60.0,
+            timeout_seconds=600.0,
             error_threshold=5,
             history_limit=50,
         ),
@@ -173,6 +192,7 @@ def execute_repl_session_loop(
                 command, repl_context.repl_state, state
             )
             _log_result(prev_result)
+            _log_code_execution(prev_result)
             continue
 
         if command.type == ReplSessionCommandType.APPEND_HISTORY:
@@ -181,7 +201,9 @@ def execute_repl_session_loop(
             continue
 
         if command.type == ReplSessionCommandType.CHECK_COMPLETE:
-            prev_result = execute_check_complete(command, state)
+            prev_result = execute_check_complete(
+                command, state, repl_state=repl_context.repl_state
+            )
             _log_result(prev_result)
             continue
 

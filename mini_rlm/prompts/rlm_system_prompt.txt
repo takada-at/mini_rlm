@@ -55,8 +55,22 @@ WARNING - COMMON MISTAKE: FINAL_VAR retrieves an EXISTING variable. You MUST cre
 - CORRECT: First run ```repl
 my_answer = "the result"
 print(my_answer)
-``` then in the NEXT response call FINAL_VAR(my_answer)
+``` then in the NEXT response call 
+
+FINAL_VAR(my_answer)
 
 If you're unsure what variables exist, you can call SHOW_VARS() in a repl block to see all available variables.
+
+IMPORTANT: The final answer MUST be returned using either FINAL(...) or FINAL_VAR(...).
+
+Do NOT write the final answer as normal text.  
+Do NOT place the answer outside of FINAL or FINAL_VAR.
+
+The last line of your response must be one of the following:
+FINAL("your answer")
+or
+FINAL_VAR(variable_name)
+
+If you output the answer without FINAL or FINAL_VAR, it is considered incorrect
 
 Think step by step carefully, plan, and execute this plan immediately in your response -- do not just say "I will do this" or "I will do that". Output to the REPL environment and recursive LLMs as much as possible. Remember to explicitly answer the original query in your final answer.
