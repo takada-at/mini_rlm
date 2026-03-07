@@ -1,0 +1,602 @@
+2026-03-07 12:23:39,748 DEBUG [mini_rlm] Executing request command: request
+2026-03-07 12:23:39,748 WARNING [mini_rlm] Request timed out: timeout
+2026-03-07 12:23:39,748 DEBUG [mini_rlm] Executing request command: request
+2026-03-07 12:23:39,748 DEBUG [mini_rlm] Executing request command: request
+2026-03-07 12:23:39,748 WARNING [mini_rlm] HTTP error occurred: server error, status_code: 500
+2026-03-07 12:23:39,750 DEBUG [mini_rlm] Traceback for HTTP error: Traceback (most recent call last):
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/executor.py", line 35, in _run_request_command
+    response_json = send_request(command.payload)
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/api_request.py", line 91, in send_request
+    response = context.session.request(
+        "POST",
+    ...<3 lines>...
+        timeout=request_payload.timeout_seconds,
+    )
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1228, in _execute_mock_call
+    raise effect
+requests.exceptions.HTTPError: server error
+
+2026-03-07 12:23:39,750 DEBUG [mini_rlm] Executing request command: request
+2026-03-07 12:23:39,750 WARNING [mini_rlm] HTTP error occurred: server error, status_code: 500
+2026-03-07 12:23:39,750 DEBUG [mini_rlm] Traceback for HTTP error: Traceback (most recent call last):
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/executor.py", line 35, in _run_request_command
+    response_json = send_request(command.payload)
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/api_request.py", line 91, in send_request
+    response = context.session.request(
+        "POST",
+    ...<3 lines>...
+        timeout=request_payload.timeout_seconds,
+    )
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1228, in _execute_mock_call
+    raise effect
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/executor.py", line 35, in _run_request_command
+    response_json = send_request(command.payload)
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/api_request.py", line 91, in send_request
+    response = context.session.request(
+        "POST",
+    ...<3 lines>...
+        timeout=request_payload.timeout_seconds,
+    )
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1228, in _execute_mock_call
+    raise effect
+requests.exceptions.HTTPError: server error
+
+2026-03-07 12:23:39,750 DEBUG [mini_rlm] Executing request command: request
+2026-03-07 12:23:39,750 WARNING [mini_rlm] HTTP error occurred: server error, status_code: 500
+2026-03-07 12:23:39,750 DEBUG [mini_rlm] Traceback for HTTP error: Traceback (most recent call last):
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/executor.py", line 35, in _run_request_command
+    response_json = send_request(command.payload)
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/api_request.py", line 91, in send_request
+    response = context.session.request(
+        "POST",
+    ...<3 lines>...
+        timeout=request_payload.timeout_seconds,
+    )
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1228, in _execute_mock_call
+    raise effect
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/executor.py", line 35, in _run_request_command
+    response_json = send_request(command.payload)
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/api_request.py", line 91, in send_request
+    response = context.session.request(
+        "POST",
+    ...<3 lines>...
+        timeout=request_payload.timeout_seconds,
+    )
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1228, in _execute_mock_call
+    raise effect
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/executor.py", line 35, in _run_request_command
+    response_json = send_request(command.payload)
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/api_request.py", line 91, in send_request
+    response = context.session.request(
+        "POST",
+    ...<3 lines>...
+        timeout=request_payload.timeout_seconds,
+    )
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1228, in _execute_mock_call
+    raise effect
+requests.exceptions.HTTPError: server error
+
+2026-03-07 12:23:39,750 DEBUG [mini_rlm] Executing request command: request
+2026-03-07 12:23:39,750 WARNING [mini_rlm] HTTP error occurred: server error, status_code: 500
+2026-03-07 12:23:39,751 DEBUG [mini_rlm] Traceback for HTTP error: Traceback (most recent call last):
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/executor.py", line 35, in _run_request_command
+    response_json = send_request(command.payload)
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/api_request.py", line 91, in send_request
+    response = context.session.request(
+        "POST",
+    ...<3 lines>...
+        timeout=request_payload.timeout_seconds,
+    )
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1228, in _execute_mock_call
+    raise effect
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/executor.py", line 35, in _run_request_command
+    response_json = send_request(command.payload)
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/api_request.py", line 91, in send_request
+    response = context.session.request(
+        "POST",
+    ...<3 lines>...
+        timeout=request_payload.timeout_seconds,
+    )
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1228, in _execute_mock_call
+    raise effect
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/executor.py", line 35, in _run_request_command
+    response_json = send_request(command.payload)
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/api_request.py", line 91, in send_request
+    response = context.session.request(
+        "POST",
+    ...<3 lines>...
+        timeout=request_payload.timeout_seconds,
+    )
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1228, in _execute_mock_call
+    raise effect
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/executor.py", line 35, in _run_request_command
+    response_json = send_request(command.payload)
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/api_request.py", line 91, in send_request
+    response = context.session.request(
+        "POST",
+    ...<3 lines>...
+        timeout=request_payload.timeout_seconds,
+    )
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1228, in _execute_mock_call
+    raise effect
+requests.exceptions.HTTPError: server error
+
+2026-03-07 12:23:39,751 DEBUG [mini_rlm] Executing request command: request
+2026-03-07 12:23:39,751 WARNING [mini_rlm] HTTP error occurred: server error, status_code: 500
+2026-03-07 12:23:39,752 DEBUG [mini_rlm] Traceback for HTTP error: Traceback (most recent call last):
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/executor.py", line 35, in _run_request_command
+    response_json = send_request(command.payload)
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/api_request.py", line 91, in send_request
+    response = context.session.request(
+        "POST",
+    ...<3 lines>...
+        timeout=request_payload.timeout_seconds,
+    )
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1228, in _execute_mock_call
+    raise effect
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/executor.py", line 35, in _run_request_command
+    response_json = send_request(command.payload)
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/api_request.py", line 91, in send_request
+    response = context.session.request(
+        "POST",
+    ...<3 lines>...
+        timeout=request_payload.timeout_seconds,
+    )
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1228, in _execute_mock_call
+    raise effect
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/executor.py", line 35, in _run_request_command
+    response_json = send_request(command.payload)
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/api_request.py", line 91, in send_request
+    response = context.session.request(
+        "POST",
+    ...<3 lines>...
+        timeout=request_payload.timeout_seconds,
+    )
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1228, in _execute_mock_call
+    raise effect
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/executor.py", line 35, in _run_request_command
+    response_json = send_request(command.payload)
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/api_request.py", line 91, in send_request
+    response = context.session.request(
+        "POST",
+    ...<3 lines>...
+        timeout=request_payload.timeout_seconds,
+    )
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1228, in _execute_mock_call
+    raise effect
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/executor.py", line 35, in _run_request_command
+    response_json = send_request(command.payload)
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/api_request.py", line 91, in send_request
+    response = context.session.request(
+        "POST",
+    ...<3 lines>...
+        timeout=request_payload.timeout_seconds,
+    )
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1228, in _execute_mock_call
+    raise effect
+requests.exceptions.HTTPError: server error
+
+2026-03-07 12:23:39,752 DEBUG [mini_rlm] Executing request command: request
+2026-03-07 12:23:39,752 WARNING [mini_rlm] Request timed out: request timed out
+2026-03-07 12:23:39,752 DEBUG [mini_rlm] Executing request command: request
+2026-03-07 12:23:39,752 DEBUG [mini_rlm] Executing request command: request
+2026-03-07 12:23:39,752 WARNING [mini_rlm] HTTP error occurred: server error, status_code: 500
+2026-03-07 12:23:39,753 DEBUG [mini_rlm] Traceback for HTTP error: Traceback (most recent call last):
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/executor.py", line 35, in _run_request_command
+    response_json = send_request(command.payload)
+  File "/Users/takada/projects/mini_rlm/tests/llm/test_executor.py", line 74, in send_request
+    raise make_http_error(500, "server error")
+requests.exceptions.HTTPError: server error
+
+2026-03-07 12:23:39,753 DEBUG [mini_rlm] Executing request command: request
+2026-03-07 12:23:39,753 WARNING [mini_rlm] HTTP error occurred: server error, status_code: 500
+2026-03-07 12:23:39,753 DEBUG [mini_rlm] Traceback for HTTP error: Traceback (most recent call last):
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/executor.py", line 35, in _run_request_command
+    response_json = send_request(command.payload)
+  File "/Users/takada/projects/mini_rlm/tests/llm/test_executor.py", line 74, in send_request
+    raise make_http_error(500, "server error")
+requests.exceptions.HTTPError: server error
+
+2026-03-07 12:23:39,753 DEBUG [mini_rlm] Executing request command: request
+2026-03-07 12:23:39,753 WARNING [mini_rlm] HTTP error occurred: server error, status_code: 500
+2026-03-07 12:23:39,753 DEBUG [mini_rlm] Traceback for HTTP error: Traceback (most recent call last):
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/executor.py", line 35, in _run_request_command
+    response_json = send_request(command.payload)
+  File "/Users/takada/projects/mini_rlm/tests/llm/test_executor.py", line 74, in send_request
+    raise make_http_error(500, "server error")
+requests.exceptions.HTTPError: server error
+
+2026-03-07 12:23:39,753 DEBUG [mini_rlm] Executing request command: request
+2026-03-07 12:23:39,753 WARNING [mini_rlm] Request timed out: timeout
+2026-03-07 12:23:39,753 DEBUG [mini_rlm] Executing request command: request
+2026-03-07 12:36:06,457 DEBUG [mini_rlm] Executing request command: request
+2026-03-07 12:36:06,457 WARNING [mini_rlm] Request timed out: timeout
+2026-03-07 12:36:06,457 DEBUG [mini_rlm] Executing request command: request
+2026-03-07 12:36:06,457 DEBUG [mini_rlm] Executing request command: request
+2026-03-07 12:36:06,457 WARNING [mini_rlm] HTTP error occurred: server error, status_code: 500
+2026-03-07 12:36:06,458 DEBUG [mini_rlm] Traceback for HTTP error: Traceback (most recent call last):
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/executor.py", line 35, in _run_request_command
+    response_json = send_request(command.payload)
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/api_request.py", line 91, in send_request
+    response = context.session.request(
+        "POST",
+    ...<3 lines>...
+        timeout=request_payload.timeout_seconds,
+    )
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1228, in _execute_mock_call
+    raise effect
+requests.exceptions.HTTPError: server error
+
+2026-03-07 12:36:06,458 DEBUG [mini_rlm] Executing request command: request
+2026-03-07 12:36:06,458 WARNING [mini_rlm] HTTP error occurred: server error, status_code: 500
+2026-03-07 12:36:06,458 DEBUG [mini_rlm] Traceback for HTTP error: Traceback (most recent call last):
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/executor.py", line 35, in _run_request_command
+    response_json = send_request(command.payload)
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/api_request.py", line 91, in send_request
+    response = context.session.request(
+        "POST",
+    ...<3 lines>...
+        timeout=request_payload.timeout_seconds,
+    )
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1228, in _execute_mock_call
+    raise effect
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/executor.py", line 35, in _run_request_command
+    response_json = send_request(command.payload)
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/api_request.py", line 91, in send_request
+    response = context.session.request(
+        "POST",
+    ...<3 lines>...
+        timeout=request_payload.timeout_seconds,
+    )
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1228, in _execute_mock_call
+    raise effect
+requests.exceptions.HTTPError: server error
+
+2026-03-07 12:36:06,458 DEBUG [mini_rlm] Executing request command: request
+2026-03-07 12:36:06,458 WARNING [mini_rlm] HTTP error occurred: server error, status_code: 500
+2026-03-07 12:36:06,459 DEBUG [mini_rlm] Traceback for HTTP error: Traceback (most recent call last):
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/executor.py", line 35, in _run_request_command
+    response_json = send_request(command.payload)
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/api_request.py", line 91, in send_request
+    response = context.session.request(
+        "POST",
+    ...<3 lines>...
+        timeout=request_payload.timeout_seconds,
+    )
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1228, in _execute_mock_call
+    raise effect
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/executor.py", line 35, in _run_request_command
+    response_json = send_request(command.payload)
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/api_request.py", line 91, in send_request
+    response = context.session.request(
+        "POST",
+    ...<3 lines>...
+        timeout=request_payload.timeout_seconds,
+    )
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1228, in _execute_mock_call
+    raise effect
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/executor.py", line 35, in _run_request_command
+    response_json = send_request(command.payload)
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/api_request.py", line 91, in send_request
+    response = context.session.request(
+        "POST",
+    ...<3 lines>...
+        timeout=request_payload.timeout_seconds,
+    )
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1228, in _execute_mock_call
+    raise effect
+requests.exceptions.HTTPError: server error
+
+2026-03-07 12:36:06,459 DEBUG [mini_rlm] Executing request command: request
+2026-03-07 12:36:06,459 WARNING [mini_rlm] HTTP error occurred: server error, status_code: 500
+2026-03-07 12:36:06,459 DEBUG [mini_rlm] Traceback for HTTP error: Traceback (most recent call last):
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/executor.py", line 35, in _run_request_command
+    response_json = send_request(command.payload)
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/api_request.py", line 91, in send_request
+    response = context.session.request(
+        "POST",
+    ...<3 lines>...
+        timeout=request_payload.timeout_seconds,
+    )
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1228, in _execute_mock_call
+    raise effect
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/executor.py", line 35, in _run_request_command
+    response_json = send_request(command.payload)
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/api_request.py", line 91, in send_request
+    response = context.session.request(
+        "POST",
+    ...<3 lines>...
+        timeout=request_payload.timeout_seconds,
+    )
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1228, in _execute_mock_call
+    raise effect
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/executor.py", line 35, in _run_request_command
+    response_json = send_request(command.payload)
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/api_request.py", line 91, in send_request
+    response = context.session.request(
+        "POST",
+    ...<3 lines>...
+        timeout=request_payload.timeout_seconds,
+    )
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1228, in _execute_mock_call
+    raise effect
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/executor.py", line 35, in _run_request_command
+    response_json = send_request(command.payload)
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/api_request.py", line 91, in send_request
+    response = context.session.request(
+        "POST",
+    ...<3 lines>...
+        timeout=request_payload.timeout_seconds,
+    )
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1228, in _execute_mock_call
+    raise effect
+requests.exceptions.HTTPError: server error
+
+2026-03-07 12:36:06,459 DEBUG [mini_rlm] Executing request command: request
+2026-03-07 12:36:06,459 WARNING [mini_rlm] HTTP error occurred: server error, status_code: 500
+2026-03-07 12:36:06,460 DEBUG [mini_rlm] Traceback for HTTP error: Traceback (most recent call last):
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/executor.py", line 35, in _run_request_command
+    response_json = send_request(command.payload)
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/api_request.py", line 91, in send_request
+    response = context.session.request(
+        "POST",
+    ...<3 lines>...
+        timeout=request_payload.timeout_seconds,
+    )
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1228, in _execute_mock_call
+    raise effect
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/executor.py", line 35, in _run_request_command
+    response_json = send_request(command.payload)
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/api_request.py", line 91, in send_request
+    response = context.session.request(
+        "POST",
+    ...<3 lines>...
+        timeout=request_payload.timeout_seconds,
+    )
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1228, in _execute_mock_call
+    raise effect
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/executor.py", line 35, in _run_request_command
+    response_json = send_request(command.payload)
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/api_request.py", line 91, in send_request
+    response = context.session.request(
+        "POST",
+    ...<3 lines>...
+        timeout=request_payload.timeout_seconds,
+    )
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1228, in _execute_mock_call
+    raise effect
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/executor.py", line 35, in _run_request_command
+    response_json = send_request(command.payload)
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/api_request.py", line 91, in send_request
+    response = context.session.request(
+        "POST",
+    ...<3 lines>...
+        timeout=request_payload.timeout_seconds,
+    )
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1228, in _execute_mock_call
+    raise effect
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/executor.py", line 35, in _run_request_command
+    response_json = send_request(command.payload)
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/api_request.py", line 91, in send_request
+    response = context.session.request(
+        "POST",
+    ...<3 lines>...
+        timeout=request_payload.timeout_seconds,
+    )
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/takada/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1228, in _execute_mock_call
+    raise effect
+requests.exceptions.HTTPError: server error
+
+2026-03-07 12:36:06,460 DEBUG [mini_rlm] Executing request command: request
+2026-03-07 12:36:06,460 WARNING [mini_rlm] Request timed out: request timed out
+2026-03-07 12:36:06,460 DEBUG [mini_rlm] Executing request command: request
+2026-03-07 12:36:06,460 DEBUG [mini_rlm] Executing request command: request
+2026-03-07 12:36:06,460 WARNING [mini_rlm] HTTP error occurred: server error, status_code: 500
+2026-03-07 12:36:06,460 DEBUG [mini_rlm] Traceback for HTTP error: Traceback (most recent call last):
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/executor.py", line 35, in _run_request_command
+    response_json = send_request(command.payload)
+  File "/Users/takada/projects/mini_rlm/tests/llm/test_executor.py", line 74, in send_request
+    raise make_http_error(500, "server error")
+requests.exceptions.HTTPError: server error
+
+2026-03-07 12:36:06,460 DEBUG [mini_rlm] Executing request command: request
+2026-03-07 12:36:06,461 WARNING [mini_rlm] HTTP error occurred: server error, status_code: 500
+2026-03-07 12:36:06,461 DEBUG [mini_rlm] Traceback for HTTP error: Traceback (most recent call last):
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/executor.py", line 35, in _run_request_command
+    response_json = send_request(command.payload)
+  File "/Users/takada/projects/mini_rlm/tests/llm/test_executor.py", line 74, in send_request
+    raise make_http_error(500, "server error")
+requests.exceptions.HTTPError: server error
+
+2026-03-07 12:36:06,461 DEBUG [mini_rlm] Executing request command: request
+2026-03-07 12:36:06,461 WARNING [mini_rlm] HTTP error occurred: server error, status_code: 500
+2026-03-07 12:36:06,461 DEBUG [mini_rlm] Traceback for HTTP error: Traceback (most recent call last):
+  File "/Users/takada/projects/mini_rlm/mini_rlm/llm/executor.py", line 35, in _run_request_command
+    response_json = send_request(command.payload)
+  File "/Users/takada/projects/mini_rlm/tests/llm/test_executor.py", line 74, in send_request
+    raise make_http_error(500, "server error")
+requests.exceptions.HTTPError: server error
+
+2026-03-07 12:36:06,461 DEBUG [mini_rlm] Executing request command: request
+2026-03-07 12:36:06,461 WARNING [mini_rlm] Request timed out: timeout
+2026-03-07 12:36:06,461 DEBUG [mini_rlm] Executing request command: request

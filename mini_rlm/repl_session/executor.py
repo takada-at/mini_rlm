@@ -19,7 +19,7 @@ from mini_rlm.repl_session.executor_command import (
     execute_execute_command,
 )
 from mini_rlm.repl_session.reducer import reduce_repl_session
-from mini_rlm.repl_setup.data_model import ReplContext
+from mini_rlm.repl_setup import ReplContext
 
 Handler = Callable[[ReplSessionState], CommandResult]
 
@@ -152,8 +152,11 @@ def execute_repl_session_loop(
             ReplSessionCommandType.EXIT,
             ReplSessionCommandType.COMPLETE,
         ):
-            _log_session_end(state)
-            return state
+            end_state = state.model_copy(
+                update={"ended_at_seconds": datetime.now().timestamp()}
+            )
+            _log_session_end(end_state)
+            return end_state
 
         if command.type == ReplSessionCommandType.CALL_LLM:
             prev_result = execute_call_llm(

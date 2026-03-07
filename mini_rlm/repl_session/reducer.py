@@ -110,8 +110,13 @@ def _next_command_after_success(
             state, ReplSessionCommandType.CHECK_COMPLETE
         )
         old_messages = state.messages if state.messages is not None else []
+        repl_results = state.repl_results if state.repl_results is not None else []
+        old_history = state.repl_history if state.repl_history is not None else []
         new_state = new_state.model_copy(
-            update={"messages": old_messages + (prev_command_result.new_messages or [])}
+            update={
+                "messages": old_messages + (prev_command_result.new_messages or []),
+                "repl_history": old_history + repl_results,
+            }
         )
         return new_state, next_command
 

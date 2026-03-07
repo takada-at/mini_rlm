@@ -3,7 +3,7 @@ from typing import List
 
 from pydantic import BaseModel
 
-from mini_rlm.llm.data_model import MessageContent, RequestContext
+from mini_rlm.llm.data_model import MessageContent
 from mini_rlm.repl.data_model import ReplResult
 
 
@@ -36,6 +36,7 @@ class TerminationReason(StrEnum):
     ERROR_THRESHOLD_EXCEEDED = "ErrorThresholdExceeded"
     CANCELLED = "Cancelled"
     COMPLETED = "Completed"
+    UNKNOWN = "Unknown"
 
 
 class ReplSessionLimits(BaseModel):
@@ -84,12 +85,18 @@ class ReplSessionState(BaseModel):
     last_command_type: ReplSessionCommandType | None = None
     termination_reason: TerminationReason | None = None
     messages: List[MessageContent] | None = None
+    ended_at_seconds: float | None = None
+
+    repl_history: List[ReplSessionHistoryEntry] | None = None
+    # This is the full history of code executions and their results, used for final output and debugging.
+
     final_answer: str | None = None
 
 
-class ReplSessionExecutorState(BaseModel):
-    request_context: RequestContext
-    limits: ReplSessionLimits
-    system_prompt: str
-    prompt: str
-    messages: List[MessageContent] | None = None
+class ReplSessionResult(BaseModel):
+    termination_reason: TerminationReason
+    final_answer: str | None
+    total_iterations: int
+    total_tokens: int
+    total_time_seconds: float
+    repl_history: List[ReplSessionHistoryEntry] | None = None
