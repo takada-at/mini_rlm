@@ -1,4 +1,4 @@
-from mini_rlm.repl.data_model import ReplState
+from mini_rlm.repl.data_model import ReplResult, ReplState
 from mini_rlm.repl.repl import (
     add_context,
     add_file,
@@ -22,4 +22,5 @@ __all__ = [
     "show_vars",
     "cleanup",
     "ReplState",
+    "ReplResult",
 ]

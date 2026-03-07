@@ -3,8 +3,8 @@ from typing import List
 
 from pydantic import BaseModel
 
-from mini_rlm.llm.data_model import MessageContent
-from mini_rlm.repl.data_model import ReplResult
+from mini_rlm.llm import MessageContent
+from mini_rlm.repl import ReplResult
 
 
 class ReplSessionStatus(StrEnum):
