@@ -1,11 +1,14 @@
 from typing import List
 
-from mini_rlm.code_block.parser import find_code_blocks, format_execution_result
-from mini_rlm.llm.api_request import make_api_request
-from mini_rlm.llm.convert import convert_messages_str
-from mini_rlm.llm.data_model import MessageContent, RequestContext
-from mini_rlm.repl.data_model import ReplState
-from mini_rlm.repl.repl import execute_code
+from mini_rlm.code_block import find_code_blocks, format_execution_result
+from mini_rlm.custom_functions import FunctionCollection
+from mini_rlm.llm import (
+    MessageContent,
+    RequestContext,
+    convert_messages_str,
+    make_api_request,
+)
+from mini_rlm.repl import ReplState, execute_code
 from mini_rlm.repl_session.data_model import (
     CommandResult,
     ReplSessionCommand,
@@ -13,17 +16,20 @@ from mini_rlm.repl_session.data_model import (
     ReplSessionResultType,
     ReplSessionState,
 )
+from mini_rlm.system_prompt import create_system_prompt
 
 
 def execute_call_llm(
     command: ReplSessionCommand,
     request_context: RequestContext,
     session_state: ReplSessionState,
+    function_collection: FunctionCollection | None = None,
 ) -> CommandResult:
     """Execute a CALL_LLM command by making an API request to the LLM with the current session history and returning the result."""
+    system_prompt = create_system_prompt(function_collection)
     system_message = MessageContent(
         role="system",
-        content="You are a helpful assistant for executing code and managing a REPL session.",
+        content=system_prompt,
     )
     user_message = MessageContent(role="user", content=session_state.prompt)
     history = session_state.messages or []

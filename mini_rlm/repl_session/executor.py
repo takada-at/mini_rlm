@@ -2,8 +2,7 @@ from collections.abc import Callable
 from datetime import datetime
 
 from mini_rlm.debug_logger import get_log_file_path, get_logger
-from mini_rlm.llm.data_model import RequestContext
-from mini_rlm.repl.data_model import ReplState
+from mini_rlm.llm import RequestContext
 from mini_rlm.repl_session.data_model import (
     CommandResult,
     ReplSessionCommandType,
@@ -20,6 +19,7 @@ from mini_rlm.repl_session.executor_command import (
     execute_execute_command,
 )
 from mini_rlm.repl_session.reducer import reduce_repl_session
+from mini_rlm.repl_setup import ReplContext
 
 Handler = Callable[[ReplSessionState], CommandResult]
 
@@ -79,15 +79,51 @@ def _log_session_end(state: ReplSessionState) -> None:
 
 
 def execute_repl_session_loop(
-    repl: ReplState,
-    request_context: RequestContext,
+    repl_context: ReplContext,
     prompt: str,
+    request_context: RequestContext | None = None,
 ) -> ReplSessionState:
+    """
+    Execute a REPL session loop and return the final ReplSessionState.
+
+    A pure state-machine loop that determines the next command via reduce_repl_session
+    and dispatches to the appropriate executor. Continues until a termination condition
+    is met (max iterations exceeded, timeout, error threshold exceeded, or explicit
+    completion command).
+
+    Session limits:
+        - token_limit: 1,000,000 tokens
+        - iteration_limit: 100 iterations
+        - timeout_seconds: 60 seconds
+        - error_threshold: 5 errors
+        - history_limit: 50 entries
+
+    Command dispatch flow:
+        1. reduce_repl_session determines the next command
+        2. EXIT / COMPLETE -> exit the loop and return state
+        3. CALL_LLM -> call the LLM
+        4. EXECUTE_CODE -> execute code via repl_context.repl_state
+        5. APPEND_HISTORY -> append to message history
+        6. CHECK_COMPLETE -> check whether the session is complete
+        7. COMPACTING -> compact the message history
+
+    Args:
+        repl_context (ReplContext): Context holding the REPL state (repl_state).
+        prompt (str): The user prompt to start the session with.
+        request_context (RequestContext | None): Context holding model settings for LLM requests.
+            If specified, you can use a different RequestContext from the ReplSession.
+
+    Returns:
+        ReplSessionState: The final state at session end.
+            Inspect status, termination_reason, and final_answer to retrieve results.
+    """
     _debug(
         "repl_session.start prompt_length=%s log_file=%s",
         len(prompt),
         get_log_file_path(),
     )
+    if request_context is None:
+        request_context = repl_context.request_context
 
     state = ReplSessionState(
         prompt=prompt,
@@ -116,16 +152,26 @@ def execute_repl_session_loop(
             ReplSessionCommandType.EXIT,
             ReplSessionCommandType.COMPLETE,
         ):
-            _log_session_end(state)
-            return state
+            end_state = state.model_copy(
+                update={"ended_at_seconds": datetime.now().timestamp()}
+            )
+            _log_session_end(end_state)
+            return end_state
 
         if command.type == ReplSessionCommandType.CALL_LLM:
-            prev_result = execute_call_llm(command, request_context, state)
+            prev_result = execute_call_llm(
+                command,
+                request_context,
+                state,
+                function_collection=repl_context.functions,
+            )
             _log_result(prev_result)
             continue
 
         if command.type == ReplSessionCommandType.EXECUTE_CODE:
-            prev_result = execute_execute_command(command, repl, state)
+            prev_result = execute_execute_command(
+                command, repl_context.repl_state, state
+            )
             _log_result(prev_result)
             continue
 
