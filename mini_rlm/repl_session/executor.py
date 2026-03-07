@@ -2,7 +2,7 @@ from collections.abc import Callable
 from datetime import datetime
 
 from mini_rlm.debug_logger import get_log_file_path, get_logger
-from mini_rlm.llm.data_model import RequestContext
+from mini_rlm.llm import RequestContext
 from mini_rlm.repl_session.data_model import (
     CommandResult,
     ReplSessionCommandType,
@@ -156,7 +156,12 @@ def execute_repl_session_loop(
             return state
 
         if command.type == ReplSessionCommandType.CALL_LLM:
-            prev_result = execute_call_llm(command, request_context, state)
+            prev_result = execute_call_llm(
+                command,
+                request_context,
+                state,
+                function_collection=repl_context.functions,
+            )
             _log_result(prev_result)
             continue
 

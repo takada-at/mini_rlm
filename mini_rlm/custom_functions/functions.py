@@ -1,12 +1,9 @@
 from typing import Callable
 
 from mini_rlm.custom_functions.data_model import Argument, Function, FunctionFactory
-from mini_rlm.image.convert import open_image_data
-from mini_rlm.image.data_model import ImageData
-from mini_rlm.llm import query_functions
-from mini_rlm.llm.data_model import RequestContext
-from mini_rlm.pdf.convert import convert_pdf_page_to_image_data
-from mini_rlm.pdf.pdf_util import pdf_page_length
+from mini_rlm.image import ImageData, open_image_data
+from mini_rlm.llm import RequestContext, query_functions
+from mini_rlm.pdf import convert_pdf_page_to_image_data, pdf_page_length
 
 convert_pdf_page_to_image_data_function = Function(
     name="convert_pdf_page_to_image_data",
