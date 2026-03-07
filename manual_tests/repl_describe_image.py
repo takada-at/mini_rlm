@@ -38,6 +38,11 @@ def parse_args() -> argparse.Namespace:
         help=f"Model name. Defaults to ${MODEL_ENV} when set.",
     )
     parser.add_argument(
+        "--sub_model",
+        default=os.environ.get(MODEL_ENV),
+        help=f"Sub-model name. Defaults to ${MODEL_ENV} when set.",
+    )
+    parser.add_argument(
         "--prompt",
         default=DEFAULT_PROMPT,
         help="Prompt passed to run_repl_session.",
@@ -50,10 +55,6 @@ def create_context_payload(image_filename: str) -> dict[str, str]:
         "image_path": image_filename,
         "note": "The image file in image_path has already been added to the REPL working directory.",
     }
-
-
-def create_setup_code(image_filename: str) -> str:
-    return f"image_path = {image_filename!r}"
 
 
 def print_result(
@@ -81,20 +82,35 @@ def main() -> None:
 
     endpoint_url = require_env(ENDPOINT_ENV)
     api_key = require_env(API_KEY_ENV)
+    if args.sub_model:
+        sub_model = args.sub_model
+    elif args.model:
+        sub_model = args.model
+    else:
+        raise RuntimeError(
+            f"Model name must be specified via --sub_model, --model, or {MODEL_ENV} environment variable."
+        )
     request_context = create_request_context(
         endpoint_url=endpoint_url,
         api_key=api_key,
-        model=args.model,
+        model=sub_model,
+    )
+    request_context_main = create_request_context(
+        endpoint_url=endpoint_url,
+        api_key=api_key,
+        model=sub_model,
     )
 
     repl_context = setup_repl(
         request_context=request_context,
         file_pathes=[image_path],
+        context_payload=create_context_payload(image_path.name),
     )
     try:
         result = run_repl_session(
             repl_context=repl_context,
             prompt=args.prompt.format(image_path=image_path.name),
+            request_context=request_context_main,
         )
     finally:
         cleanup(repl_context.repl_state)
