@@ -7,7 +7,7 @@ from requests import Session
 
 class ImageURL(BaseModel):
     url: str
-    detail: str | None = None
+    detail: Literal["low", "high", "auto"] = "auto"
 
 
 class MessageContentPart(BaseModel):

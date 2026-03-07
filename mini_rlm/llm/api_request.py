@@ -34,7 +34,10 @@ def dump_messages(messages: List[MessageContent]) -> List[Dict[str, Any]]:
                     )
                 else:
                     raise ValueError(f"Unsupported message content part: {part}")
-        res.append({"role": message.role, "content": content})
+        message_dic = {"role": message.role, "content": content}
+        if message.name is not None:
+            message_dic["name"] = message.name
+        res.append(message_dic)
     return res
 
 
@@ -90,7 +93,7 @@ def run_api_request(
         url=context.endpoint.url,
         headers=context.endpoint.headers or {},
         body=request_body,
-        timeout_seconds=30.0,
+        timeout_seconds=120.0,
     )
     retry_policy = RetryPolicy(
         max_attempts=5,

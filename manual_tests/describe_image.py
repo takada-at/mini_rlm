@@ -2,7 +2,7 @@ import argparse
 import os
 import sys
 from pathlib import Path
-from typing import Sequence
+from typing import Literal, Sequence, cast
 
 import requests
 
@@ -87,14 +87,18 @@ def create_messages(
 ) -> list[MessageContent]:
     image_data = open_image_data(image_path)
     image_url = convert_image_data_to_image_url(image_data)
+    assert detail in ["low", "high", "auto"], "Invalid detail value"
     return [
         MessageContent(
             role="user",
             content=[
                 MessageContentPart(type="text", text=prompt),
-                MessageContentPart(
+                MessageContentPart(  # type: ignore
                     type="image_url",
-                    image_url=ImageURL(url=image_url, detail=detail),
+                    image_url=ImageURL(
+                        url=image_url,
+                        detail=cast(Literal["low", "high", "auto"], detail),
+                    ),  # type: ignore
                 ),
             ],
         )

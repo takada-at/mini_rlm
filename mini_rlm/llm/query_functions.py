@@ -1,3 +1,4 @@
+import re
 from typing import List
 
 from mini_rlm.image.convert import convert_image_data_to_image_url
@@ -21,6 +22,11 @@ def message_content_parts_to_text(content_part: MessageContentPart) -> str:
         raise ValueError(f"Unsupported content part type: {content_part.type}")
 
 
+def remove_think_tag_contents(text: str) -> str:
+    """Remove <think>*</think> contents from the text."""
+    return re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
+
+
 def message_content_to_text(content: str | List[MessageContentPart]) -> str:
     """Convert a MessageContent to text for display."""
     if isinstance(content, str):
@@ -37,7 +43,9 @@ def text_query(context: RequestContext, text: str) -> str:
     response = make_api_request(context, messages)
     response_messages = response.messages
     if response_messages:
-        return message_content_to_text(response_messages[0].content)
+        return remove_think_tag_contents(
+            message_content_to_text(response_messages[0].content)
+        )
     else:
         return ""
 
@@ -53,6 +61,8 @@ def image_query(context: RequestContext, text: str, image_data: ImageData) -> st
     response = make_api_request(context, messages)
     response_messages = response.messages
     if response_messages:
-        return message_content_to_text(response_messages[0].content)
+        return remove_think_tag_contents(
+            message_content_to_text(response_messages[0].content)
+        )
     else:
         return ""

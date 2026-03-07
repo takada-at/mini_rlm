@@ -15,7 +15,11 @@ def _resolve_log_path() -> Path:
     configured = os.getenv("MINI_RLM_LOG_FILE")
     if configured is None or configured.strip() == "":
         return Path(_DEFAULT_LOG_PATH)
-    return Path(configured)
+    path = Path(configured)
+    if path.is_dir():
+        return path
+    else:
+        return path.parent
 
 
 def initialize_log_path(log_path: str | Path | None = None) -> Path:
