@@ -1,5 +1,5 @@
 from enum import StrEnum
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Literal
 
 from pydantic import BaseModel, ConfigDict
 from requests import Session
@@ -11,7 +11,7 @@ class ImageURL(BaseModel):
 
 
 class MessageContentPart(BaseModel):
-    type: str  # "text" or "image"
+    type: Literal["text", "image_url"]
     text: str | None = None
     image_url: ImageURL | None = None
 

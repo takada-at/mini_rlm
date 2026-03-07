@@ -15,7 +15,7 @@ def message_content_parts_to_text(content_part: MessageContentPart) -> str:
     """Convert a MessageContentPart to text for display."""
     if content_part.type == "text" and content_part.text:
         return content_part.text
-    elif content_part.type == "image" and content_part.image_url:
+    elif content_part.type == "image_url" and content_part.image_url:
         return f"[Image: {content_part.image_url.url}]"
     else:
         raise ValueError(f"Unsupported content part type: {content_part.type}")
@@ -47,7 +47,7 @@ def image_query(context: RequestContext, text: str, image_data: ImageData) -> st
     image_url = convert_image_data_to_image_url(image_data)
     message_content = [
         MessageContentPart(type="text", text=text),
-        MessageContentPart(type="image", image_url=ImageURL(url=image_url)),
+        MessageContentPart(type="image_url", image_url=ImageURL(url=image_url)),
     ]
     messages = [MessageContent(role="user", content=message_content)]
     response = make_api_request(context, messages)

@@ -16,7 +16,25 @@ from mini_rlm.llm.executor import execute_request_loop
 
 def dump_messages(messages: List[MessageContent]) -> List[Dict[str, Any]]:
     """Dump a list of MessageContent to a list of dicts for JSON serialization."""
-    return [message.model_dump() for message in messages]
+    res = []
+    for message in messages:
+        content: str | List[Dict[str, Any]] = []
+        if isinstance(message.content, str):
+            content = message.content
+        else:
+            assert isinstance(content, list)
+            for part in message.content:
+                if part.type == "text":
+                    content.append({"type": "text", "text": part.text})
+                elif part.type == "image_url":
+                    assert part.image_url is not None
+                    content.append(
+                        {"type": "image_url", "image_url": part.image_url.model_dump()}
+                    )
+                else:
+                    raise ValueError(f"Unsupported message content part: {part}")
+        res.append({"role": message.role, "content": content})
+    return res
 
 
 def make_api_request(
@@ -88,6 +106,9 @@ def run_api_request(
     )
 
     def send_request(request_payload: RequestPayload) -> Dict[str, Any]:
+        print(
+            f"Sending request to {request_payload.url} with body: {request_payload.body}"
+        )
         response = context.session.request(
             "POST",
             request_payload.url,

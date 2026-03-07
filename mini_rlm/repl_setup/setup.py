@@ -1,13 +1,14 @@
 from pathlib import Path
 from typing import Any, Dict, List
 
-from mini_rlm.custom_functions.data_model import (
+from mini_rlm.custom_functions import (
     Function,
     FunctionCollection,
     FunctionFactory,
+    image_function_collection,
 )
 from mini_rlm.llm.data_model import RequestContext
-from mini_rlm.repl.repl import add_file, add_function, create_repl
+from mini_rlm.repl import add_file, add_function, create_repl
 from mini_rlm.repl_setup.data_model import ReplContext
 
 
@@ -26,14 +27,15 @@ def setup_repl(
                 raise FileNotFoundError(f"File not found: {file_path}")
             with file_path.open("rb") as f:
                 add_file(state, file_path.name, f)
-    if functions:
-        for func in functions.functions:
-            if isinstance(func, FunctionFactory):
-                pyfunc = func.factory(request_context)
-            else:
-                assert isinstance(func, Function)
-                pyfunc = func.function
-            add_function(state, func.name, pyfunc)
+    if functions is None:
+        functions = image_function_collection()
+    for func in functions.functions:
+        if isinstance(func, FunctionFactory):
+            pyfunc = func.factory(request_context)
+        else:
+            assert isinstance(func, Function)
+            pyfunc = func.function
+        add_function(state, func.name, pyfunc)
     return ReplContext(
         request_context=request_context,
         repl_state=state,
