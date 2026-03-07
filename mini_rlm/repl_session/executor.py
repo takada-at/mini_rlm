@@ -80,18 +80,50 @@ def _log_session_end(state: ReplSessionState) -> None:
 
 def execute_repl_session_loop(
     repl_context: ReplContext,
-    request_context: RequestContext,
     prompt: str,
+    request_context: RequestContext | None = None,
 ) -> ReplSessionState:
     """
-    Execute a REPL session loop with the given *repl_context* and *request_context*, starting with *prompt*.
-    The loop will continue until a termination condition is met (e.g. max iterations, timeout, or explicit exit command).
+    Execute a REPL session loop and return the final ReplSessionState.
+
+    A pure state-machine loop that determines the next command via reduce_repl_session
+    and dispatches to the appropriate executor. Continues until a termination condition
+    is met (max iterations exceeded, timeout, error threshold exceeded, or explicit
+    completion command).
+
+    Session limits:
+        - token_limit: 1,000,000 tokens
+        - iteration_limit: 100 iterations
+        - timeout_seconds: 60 seconds
+        - error_threshold: 5 errors
+        - history_limit: 50 entries
+
+    Command dispatch flow:
+        1. reduce_repl_session determines the next command
+        2. EXIT / COMPLETE -> exit the loop and return state
+        3. CALL_LLM -> call the LLM
+        4. EXECUTE_CODE -> execute code via repl_context.repl_state
+        5. APPEND_HISTORY -> append to message history
+        6. CHECK_COMPLETE -> check whether the session is complete
+        7. COMPACTING -> compact the message history
+
+    Args:
+        repl_context (ReplContext): Context holding the REPL state (repl_state).
+        prompt (str): The user prompt to start the session with.
+        request_context (RequestContext | None): Context holding model settings for LLM requests.
+            If specified, you can use a different RequestContext from the ReplSession.
+
+    Returns:
+        ReplSessionState: The final state at session end.
+            Inspect status, termination_reason, and final_answer to retrieve results.
     """
     _debug(
         "repl_session.start prompt_length=%s log_file=%s",
         len(prompt),
         get_log_file_path(),
     )
+    if request_context is None:
+        request_context = repl_context.request_context
 
     state = ReplSessionState(
         prompt=prompt,
