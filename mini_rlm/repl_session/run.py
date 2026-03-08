@@ -1,7 +1,11 @@
 from datetime import datetime
 
 from mini_rlm.llm import RequestContext
-from mini_rlm.repl_session.data_model import ReplSessionResult, TerminationReason
+from mini_rlm.repl_session.data_model import (
+    ReplSessionLimits,
+    ReplSessionResult,
+    TerminationReason,
+)
 from mini_rlm.repl_session.executor import execute_repl_session_loop
 from mini_rlm.repl_setup import ReplContext
 
@@ -9,12 +13,14 @@ from mini_rlm.repl_setup import ReplContext
 def run_repl_session(
     repl_context: ReplContext,
     prompt: str,
+    limits: ReplSessionLimits | None = None,
     request_context: RequestContext | None = None,
 ) -> ReplSessionResult:
     """Runs a REPL session with the given prompt and request context, returning the final result."""
     last_state = execute_repl_session_loop(
         repl_context=repl_context,
         prompt=prompt,
+        limits=limits,
         request_context=request_context,
     )
     if last_state.ended_at_seconds is None:

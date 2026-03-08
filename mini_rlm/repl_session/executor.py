@@ -100,6 +100,7 @@ def _log_code_execution(result: CommandResult) -> None:
 def execute_repl_session_loop(
     repl_context: ReplContext,
     prompt: str,
+    limits: ReplSessionLimits | None = None,
     request_context: RequestContext | None = None,
 ) -> ReplSessionState:
     """
@@ -129,6 +130,7 @@ def execute_repl_session_loop(
     Args:
         repl_context (ReplContext): Context holding the REPL state (repl_state).
         prompt (str): The user prompt to start the session with.
+        limits (ReplSessionLimits | None): Optional custom limits for the session. If None, defaults will be used.
         request_context (RequestContext | None): Context holding model settings for LLM requests.
             If specified, you can use a different RequestContext from the ReplSession.
 
@@ -144,16 +146,18 @@ def execute_repl_session_loop(
     if request_context is None:
         request_context = repl_context.request_context
 
+    limits = limits or ReplSessionLimits(
+        token_limit=1_000_000,
+        iteration_limit=100,
+        timeout_seconds=600.0,
+        error_threshold=5,
+        history_limit=50,
+    )
+
     state = ReplSessionState(
         prompt=prompt,
         status=ReplSessionStatus.RUNNING,
-        limits=ReplSessionLimits(
-            token_limit=1_000_000,
-            iteration_limit=100,
-            timeout_seconds=600.0,
-            error_threshold=5,
-            history_limit=50,
-        ),
+        limits=limits,
         started_at_seconds=datetime.now().timestamp(),
         current_time_seconds=datetime.now().timestamp(),
     )

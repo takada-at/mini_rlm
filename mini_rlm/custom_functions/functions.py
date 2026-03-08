@@ -3,7 +3,11 @@ from typing import Callable
 from mini_rlm.custom_functions.data_model import Argument, Function, FunctionFactory
 from mini_rlm.image import ImageData, open_image_data
 from mini_rlm.llm import RequestContext, query_functions
-from mini_rlm.pdf import convert_pdf_page_to_image_data, pdf_page_length
+from mini_rlm.pdf import (
+    convert_pdf_page_to_image_data,
+    convert_pdf_page_to_text,
+    pdf_page_length,
+)
 
 convert_pdf_page_to_image_data_function = Function(
     name="convert_pdf_page_to_image_data",
@@ -18,6 +22,20 @@ convert_pdf_page_to_image_data_function = Function(
     ],
     function=convert_pdf_page_to_image_data,
     return_type=ImageData,
+)
+convert_pdf_page_to_text_function = Function(
+    name="convert_pdf_page_to_text",
+    description="Convert a PDF page to text",
+    arguments=[
+        Argument(name="file_path", description="Path to the PDF file", type=str),
+        Argument(
+            name="page_index",
+            description="Page number to convert (0-indexed)",
+            type=int,
+        ),
+    ],
+    function=convert_pdf_page_to_text,
+    return_type=str,
 )
 
 pdf_page_length_function = Function(

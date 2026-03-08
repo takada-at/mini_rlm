@@ -8,11 +8,12 @@ from manual_tests.describe_image import (  # noqa: E402
 )
 from mini_rlm.custom_functions import pdf_function_collection
 from mini_rlm.repl import cleanup  # noqa: E402
-from mini_rlm.repl_session import run_repl_session  # noqa: E402
+from mini_rlm.repl_session import ReplSessionLimits, run_repl_session  # noqa: E402
 from mini_rlm.repl_setup import setup_repl  # noqa: E402
 
 DEFAULT_PROMPT = """The pdf file {pdf_path} has already been added to the REPL working directory. 
 Please find the page number where the Chapter 2 starts and return the page number as an integer.
+In this environment, LLM calls are extremely slow, so please measure the time and call them carefully.
 """
 
 
@@ -94,21 +95,32 @@ def main() -> None:
         api_key=sub_api_key,
         model=sub_model,
     )
-    request_context_main = create_request_context(
-        endpoint_url=endpoint_url,
-        api_key=api_key,
-        model=args.model,
-    )
+    if sub_endpoint_url != endpoint_url:
+        request_context_main = create_request_context(
+            endpoint_url=endpoint_url,
+            api_key=api_key,
+            model=args.model,
+        )
+    else:
+        request_context_main = request_context_sub
     repl_context = setup_repl(
         request_context=request_context_sub,
         file_pathes=[pdf_path],
         context_payload=create_context_payload(pdf_path.name),
         functions=pdf_function_collection(),
     )
+    limits = ReplSessionLimits(
+        token_limit=1_000_000,
+        iteration_limit=100,
+        timeout_seconds=3600.0,
+        error_threshold=5,
+        history_limit=50,
+    )
     try:
         result = run_repl_session(
             repl_context=repl_context,
             prompt=args.prompt.format(pdf_path=pdf_path.name),
+            limits=limits,
             request_context=request_context_main,
         )
     finally:
