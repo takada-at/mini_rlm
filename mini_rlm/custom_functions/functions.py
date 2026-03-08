@@ -152,20 +152,3 @@ query_pdf_llm_factory = FunctionFactory(
     factory=create_query_pdf_llm,
     return_type=str,
 )
-
-
-query_pdf_llm_factory = FunctionFactory(
-    name="query_pdf_llm",
-    description="Query the LLM with text and PDF input",
-    arguments=[
-        Argument(name="text", description="Text input for the LLM", type=str),
-        Argument(
-            name="pdf_path", description="Path to the PDF file for the LLM", type=str
-        ),
-        Argument(
-            name="page_index", description="Page number to query (0-indexed)", type=int
-        ),
-    ],
-    return_type=str,
-    factory=create_query_pdf_llm,
-)
