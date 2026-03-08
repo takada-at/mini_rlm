@@ -1,2 +1,2 @@
-- repl code parserを書く
-- トップレベルAPIの設計
+- compactionの実装
+- メインLLMのトークン数と費用をトラックしたい

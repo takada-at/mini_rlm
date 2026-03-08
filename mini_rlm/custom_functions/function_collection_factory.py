@@ -6,6 +6,7 @@ from mini_rlm.custom_functions.data_model import (
 )
 from mini_rlm.custom_functions.functions import (
     convert_pdf_page_to_image_data_function,
+    convert_pdf_page_to_text_function,
     open_image_data_function,
     pdf_page_length_function,
     query_image_llm_factory,
@@ -33,6 +34,7 @@ def pdf_function_collection() -> FunctionCollection:
     """Create a FunctionCollection with PDF-related functions and LLM query functions."""
     functions: List[FunctionBase] = [
         convert_pdf_page_to_image_data_function,
+        convert_pdf_page_to_text_function,
         pdf_page_length_function,
         query_llm_factory,
         query_image_llm_factory,

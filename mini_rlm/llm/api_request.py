@@ -2,6 +2,7 @@ import random
 import time
 from typing import Any, Dict, List
 
+from mini_rlm.debug_logger import get_logger
 from mini_rlm.llm.data_model import (
     APIRequestResult,
     MessageContent,
@@ -16,7 +17,28 @@ from mini_rlm.llm.executor import execute_request_loop
 
 def dump_messages(messages: List[MessageContent]) -> List[Dict[str, Any]]:
     """Dump a list of MessageContent to a list of dicts for JSON serialization."""
-    return [message.model_dump() for message in messages]
+    res = []
+    for message in messages:
+        content: str | List[Dict[str, Any]] = []
+        if isinstance(message.content, str):
+            content = message.content
+        else:
+            assert isinstance(content, list)
+            for part in message.content:
+                if part.type == "text":
+                    content.append({"type": "text", "text": part.text})
+                elif part.type == "image_url":
+                    assert part.image_url is not None
+                    content.append(
+                        {"type": "image_url", "image_url": part.image_url.model_dump()}
+                    )
+                else:
+                    raise ValueError(f"Unsupported message content part: {part}")
+        message_dic = {"role": message.role, "content": content}
+        if message.name is not None:
+            message_dic["name"] = message.name
+        res.append(message_dic)
+    return res
 
 
 def make_api_request(
@@ -71,7 +93,7 @@ def run_api_request(
         url=context.endpoint.url,
         headers=context.endpoint.headers or {},
         body=request_body,
-        timeout_seconds=30.0,
+        timeout_seconds=120.0,
     )
     retry_policy = RetryPolicy(
         max_attempts=5,
@@ -86,8 +108,14 @@ def run_api_request(
         payload=payload,
         retry_policy=retry_policy,
     )
+    logger = get_logger()
 
     def send_request(request_payload: RequestPayload) -> Dict[str, Any]:
+        logger.debug(
+            "Sending request to %s with %s message(s)",
+            request_payload.url,
+            len(request_payload.body.get("messages", [])),
+        )
         response = context.session.request(
             "POST",
             request_payload.url,

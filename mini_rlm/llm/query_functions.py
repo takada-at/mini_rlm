@@ -1,3 +1,4 @@
+import re
 from typing import List
 
 from mini_rlm.image.convert import convert_image_data_to_image_url
@@ -15,10 +16,15 @@ def message_content_parts_to_text(content_part: MessageContentPart) -> str:
     """Convert a MessageContentPart to text for display."""
     if content_part.type == "text" and content_part.text:
         return content_part.text
-    elif content_part.type == "image" and content_part.image_url:
+    elif content_part.type == "image_url" and content_part.image_url:
         return f"[Image: {content_part.image_url.url}]"
     else:
         raise ValueError(f"Unsupported content part type: {content_part.type}")
+
+
+def remove_think_tag_contents(text: str) -> str:
+    """Remove <think>*</think> contents from the text."""
+    return re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
 
 
 def message_content_to_text(content: str | List[MessageContentPart]) -> str:
@@ -37,7 +43,9 @@ def text_query(context: RequestContext, text: str) -> str:
     response = make_api_request(context, messages)
     response_messages = response.messages
     if response_messages:
-        return message_content_to_text(response_messages[0].content)
+        return remove_think_tag_contents(
+            message_content_to_text(response_messages[0].content)
+        )
     else:
         return ""
 
@@ -47,12 +55,14 @@ def image_query(context: RequestContext, text: str, image_data: ImageData) -> st
     image_url = convert_image_data_to_image_url(image_data)
     message_content = [
         MessageContentPart(type="text", text=text),
-        MessageContentPart(type="image", image_url=ImageURL(url=image_url)),
+        MessageContentPart(type="image_url", image_url=ImageURL(url=image_url)),
     ]
     messages = [MessageContent(role="user", content=message_content)]
     response = make_api_request(context, messages)
     response_messages = response.messages
     if response_messages:
-        return message_content_to_text(response_messages[0].content)
+        return remove_think_tag_contents(
+            message_content_to_text(response_messages[0].content)
+        )
     else:
         return ""

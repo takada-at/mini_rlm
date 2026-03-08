@@ -1,7 +1,12 @@
 from typing import List
 
-from mini_rlm.code_block import find_code_blocks, format_execution_result
+from mini_rlm.code_block import (
+    find_code_blocks,
+    find_final_answer,
+    format_execution_result,
+)
 from mini_rlm.custom_functions import FunctionCollection
+from mini_rlm.debug_logger import get_logger
 from mini_rlm.llm import (
     MessageContent,
     RequestContext,
@@ -70,11 +75,22 @@ def execute_execute_command(
             command_type=command.type,
             error_message="No LLM message to execute",
         )
+    logger = get_logger()
+    logger.debug(
+        "Executing code from last LLM message:\n%s", session_state.last_llm_message
+    )
     code_blocks = find_code_blocks(session_state.last_llm_message)
     results = []
     for code in code_blocks:
         exec_result = execute_code(state=repl, code=code)
         results.append(ReplSessionHistoryEntry(code=code, repl_result=exec_result))
+    if not code_blocks:
+        logger.warning(
+            "No code blocks found in last LLM message to execute. Returning empty results. \n%s",
+            session_state.last_llm_message,
+        )
+    else:
+        logger.debug("Executed %d code blocks from last LLM message", len(code_blocks))
     return CommandResult(
         type=ReplSessionResultType.SUCCESS,
         command_type=command.type,
@@ -137,12 +153,20 @@ def format_iteration(
 def execute_check_complete(
     command: ReplSessionCommand,
     session_state: ReplSessionState,
+    repl_state: ReplState,
 ) -> CommandResult:
     """Execute a CHECK_COMPLETE command by checking if the last LLM message indicates completion and returning the result."""
     final_answer = None
     for entry in session_state.repl_results or []:
         if entry.repl_result is not None and entry.repl_result.final_answer is not None:
             final_answer = entry.repl_result.final_answer
+            break
+    if final_answer is None:
+        # If no final answer found in execution results, also check the last LLM message for a FINAL(...) statement
+        if session_state.last_llm_message is not None:
+            final_answer = find_final_answer(
+                session_state.last_llm_message, repl_state=repl_state
+            )
     return CommandResult(
         type=ReplSessionResultType.SUCCESS,
         command_type=command.type,
