@@ -12,21 +12,28 @@ from mini_rlm.repl import cleanup
 from mini_rlm.repl_session import ReplSessionLimits, ReplSessionResult, run_repl_session
 from mini_rlm.repl_setup import setup_repl
 
+PROMPT_TOC_PAGE = """The pdf file {pdf_path} has already been added to the REPL working directory. 
+Please find the page number where the the table of contents starts and return the page number as an integer.
+From the table of contents, locate the starting page of Chapter {chapter_number} and the next chapter's starting page, then report your findings.
+"""
+
 PROMPT_PAGE_START = """The pdf file {pdf_path} has already been added to the REPL working directory. 
 Please find the page number where the Chapter {chapter_number} starts and return the page number as an integer.
-In this environment, LLM calls are extremely slow, so please measure the time and call them carefully.
-When searching for pages, the page numbers listed in the table of contents often differ from the actual page numbers. Please use the table of contents only as a reference and verify the actual page numbers.
-DON'T USE query_llm to answer this question. ONLY USE the PDF-related functions to find the answer.
+The following information was obtained from the table of contents. Note that the page numbers in the table of contents often differ from the actual PDF page numbers, so be sure to verify the information before providing the number.
+
+# Report
+{toc_report}
 """
 
 PROMPT_PAGE_END = """The pdf file {pdf_path} has already been added to the REPL working directory. 
 Please find the page number where the Chapter {chapter_number} ends and return the page number as an integer.
-In this environment, LLM calls are extremely slow, so please measure the time and call them carefully.
-When searching for pages, the page numbers listed in the table of contents often differ from the actual page numbers. Please use the table of contents only as a reference and verify the actual page numbers.
-DON'T USE query_llm to answer this question. ONLY USE the PDF-related functions to find the answer.
+The following information was obtained from the table of contents. Note that the page numbers in the table of contents often differ from the actual PDF page numbers, so be sure to verify the information before providing the number.
+
+# Report
+{toc_report}
 """
 
-MODEL = "openai/gpt-5.4"
+MODEL = "openai/gpt-5.3-codex"
 SUB_MODEL = "qwen/qwen3.5-35b-a3b"
 
 
@@ -146,12 +153,22 @@ def fetch_page_range(
     pdf_path: Path,
     chapter_num: int,
 ) -> tuple[int, int]:
+    result0 = run_repl(
+        request_context=request_context,
+        request_context2=request_context2,
+        pdf_path=pdf_path,
+        prompt=PROMPT_TOC_PAGE.format(
+            pdf_path=pdf_path.name, chapter_number=chapter_num
+        ),
+    )
+    toc_report = result0.final_answer
+    print(f"Table of contents report for chapter {chapter_num}: {toc_report}")
     result1 = run_repl(
         request_context=request_context,
         request_context2=request_context2,
         pdf_path=pdf_path,
         prompt=PROMPT_PAGE_START.format(
-            pdf_path=pdf_path.name, chapter_number=chapter_num
+            pdf_path=pdf_path.name, chapter_number=chapter_num, toc_report=toc_report
         ),
     )
     try:
@@ -166,7 +183,7 @@ def fetch_page_range(
         request_context2=request_context2,
         pdf_path=pdf_path,
         prompt=PROMPT_PAGE_END.format(
-            pdf_path=pdf_path.name, chapter_number=chapter_num
+            pdf_path=pdf_path.name, chapter_number=chapter_num, toc_report=toc_report
         ),
     )
     try:
