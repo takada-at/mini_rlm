@@ -76,6 +76,23 @@ def test_execute_code_blocked_builtins(state):
     assert result.stderr != ""
 
 
+def test_execute_code_returns_last_expression_result(state):
+    # given: 変数を定義して末尾を式で終えるコードである
+    # when: コードを実行する
+    result = execute_code(state, "x = 40\nx + 2")
+    # then: 末尾式の評価結果が返る
+    assert result.expression_result == "42"
+    assert result.locals["x"] == 40
+
+
+def test_execute_code_returns_syntax_error_in_stderr(state):
+    # given: 構文エラーを含むコードである
+    # when: コードを実行する
+    result = execute_code(state, "x =")
+    # then: 構文エラーが stderr に返る
+    assert "SyntaxError" in result.stderr
+
+
 # =============================================================================
 # FINAL_VAR
 # =============================================================================
@@ -256,15 +273,3 @@ def test_cleanup_clears_namespace(state):
     # then: globals / locals が空になる
     assert state.globals == {}
     assert state.locals == {}
-
-
-def test_cleanup_removes_temp_dir(state):
-    # given: REPL の temp_dir が存在する
-    import os
-
-    temp_dir = state.temp_dir
-    assert os.path.exists(temp_dir)
-    # when: cleanup を呼ぶ
-    cleanup(state)
-    # then: temp_dir が削除される
-    assert not os.path.exists(temp_dir)

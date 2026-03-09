@@ -1,17 +1,14 @@
-import contextlib
 import copy
-import io
 import json
 import os
 import shutil
-import sys
 import tempfile
-import time
 import uuid
 from pathlib import Path
 from typing import IO, Any, Dict
 
 from mini_rlm.repl.data_model import ReplResult, ReplState
+from mini_rlm.repl.executor import execute_repl_execution
 
 # =============================================================================
 # Safe Builtins
@@ -218,78 +215,9 @@ def show_vars(state: ReplState) -> str:
     return f"Available variables: {available}"
 
 
-# =============================================================================
-# Execution internals
-# =============================================================================
-
-
-@contextlib.contextmanager
-def _capture_output(state: ReplState):
-    """Thread-safe context manager that captures stdout/stderr."""
-    with state.lock:
-        old_stdout, old_stderr = sys.stdout, sys.stderr
-        stdout_buf, stderr_buf = io.StringIO(), io.StringIO()
-        try:
-            sys.stdout, sys.stderr = stdout_buf, stderr_buf
-            yield stdout_buf, stderr_buf
-        finally:
-            sys.stdout, sys.stderr = old_stdout, old_stderr
-
-
-@contextlib.contextmanager
-def _temp_cwd(state: ReplState):
-    """Temporarily change the working directory to the REPL temp dir."""
-    old_cwd = os.getcwd()
-    try:
-        os.chdir(state.temp_dir)
-        yield
-    finally:
-        os.chdir(old_cwd)
-
-
-def _restore_scaffold(state: ReplState) -> None:
-    """Re-apply reserved globals so user code cannot permanently overwrite them."""
-    for name, value in state.reserved_globals.items():
-        state.globals[name] = value
-
-    # Restore context/history aliases if they were overwritten
-    if "context_0" in state.locals and "context" not in state.reserved_globals:
-        state.locals["context"] = state.locals["context_0"]
-    if "history_0" in state.locals and "history" not in state.reserved_globals:
-        state.locals["history"] = state.locals["history_0"]
-
-
 def execute_code(state: ReplState, code: str) -> ReplResult:
     """Execute *code* in the persistent sandbox and return a ReplResult."""
-    start_time = time.perf_counter()
-
-    with _capture_output(state) as (stdout_buf, stderr_buf), _temp_cwd(state):
-        try:
-            combined = {**state.globals, **state.locals}
-            exec(code, combined, combined)  # noqa: S102
-
-            # Promote new user-defined names to locals
-            for key, value in combined.items():
-                if key not in state.globals and not key.startswith("_"):
-                    state.locals[key] = value
-
-            _restore_scaffold(state)
-            stdout = stdout_buf.getvalue()
-            stderr = stderr_buf.getvalue()
-        except Exception as e:
-            stdout = stdout_buf.getvalue()
-            stderr = stderr_buf.getvalue() + f"\n{type(e).__name__}: {e}"
-
-    final_answer = state.last_final_answer
-    state.last_final_answer = None
-
-    return ReplResult(
-        stdout=stdout,
-        stderr=stderr,
-        locals=state.locals.copy(),
-        execution_time=time.perf_counter() - start_time,
-        final_answer=final_answer,
-    )
+    return execute_repl_execution(state, code)
 
 
 # =============================================================================
