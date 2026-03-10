@@ -85,6 +85,7 @@ class RequestState(BaseModel):
     last_error_type: RequestResultType | None = None
     last_error_message: str | None = None
     response_json: Dict[str, Any] | None = None
+    message: MessageContent | None = None
 
 
 class RequestCommand(BaseModel):
@@ -97,6 +98,7 @@ class CommandResult(BaseModel):
     type: RequestResultType
     status_code: int | None = None
     response_json: Dict[str, Any] | None = None
+    message: MessageContent | None = None
     error_message: str | None = None
 
 

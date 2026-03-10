@@ -3,10 +3,12 @@ from collections.abc import Callable
 from typing import Any
 
 import requests
+from pydantic import ValidationError
 
 from mini_rlm.debug_logger import get_logger
 from mini_rlm.llm.data_model import (
     CommandResult,
+    MessageContent,
     RequestCommand,
     RequestCommandType,
     RequestPayload,
@@ -42,8 +44,19 @@ def _run_request_command(
                 type=RequestResultType.INVALID_RESPONSE,
                 error_message="response JSON does not contain 'choices'",
             )
+        try:
+            message = MessageContent.model_validate(
+                response_json["choices"][0]["message"]
+            )
+        except ValidationError as error:
+            logger.warning(f"Failed to parse message content from response: {error}")
+            message = None
+            return CommandResult(
+                type=RequestResultType.INVALID_RESPONSE,
+                error_message=f"response JSON 'choices' has invalid format: {error}",
+            )
         return CommandResult(
-            type=RequestResultType.SUCCESS, response_json=response_json
+            type=RequestResultType.SUCCESS, response_json=response_json, message=message
         )
     except requests.Timeout as error:
         logger.warning(f"Request timed out: {error}")

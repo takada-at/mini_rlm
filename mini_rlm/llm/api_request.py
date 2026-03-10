@@ -57,23 +57,14 @@ def make_api_request(
         )
         error_message = final_state.last_error_message or "request failed"
         raise RuntimeError(f"LLM API request failed: {error_type}: {error_message}")
-
-    response_data = final_state.response_json
-    if (
-        "choices" in response_data
-        and isinstance(response_data["choices"], list)
-        and len(response_data["choices"]) > 0
-    ):
+    message = final_state.message
+    if message is not None:
         return APIRequestResult(
-            response_json=response_data,
-            messages=[
-                MessageContent.model_validate(choice["message"])
-                for choice in response_data["choices"]
-            ],
+            response_json=final_state.response_json, messages=[message]
         )
     else:
         return APIRequestResult(
-            response_json=response_data,
+            response_json=final_state.response_json,
             messages=[],
         )
 
