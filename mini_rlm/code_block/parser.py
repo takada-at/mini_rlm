@@ -78,6 +78,9 @@ def format_execution_result(result: ReplResult) -> str:
     if result.stderr:
         result_parts.append(f"\n{result.stderr}")
 
+    if result.expression_result is not None:
+        result_parts.append(f"Expression result: {result.expression_result}\n")
+
     # Show some key variables (excluding internal ones)
     important_vars = {}
     for key, value in result.locals.items():
