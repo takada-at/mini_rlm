@@ -21,5 +21,6 @@ Important execution rule:
 - Do not call FINAL(...) or FINAL_VAR(...) until you have observed enough REPL output to complete the task.
 - It is acceptable to use multiple iterations.
 - Only use FINAL(...) or FINAL_VAR(...) in the turn where the task is actually complete.
+- Simply posting an answer won't end the session. If you reach an answer, be sure to use `FINAL` or `FINAL_VAR`.
 
 Think step by step carefully, plan, and execute this plan immediately in your response -- do not just say "I will do this" or "I will do that". Output to the REPL environment and recursive LLMs as much as possible. Remember to explicitly answer the original query in your final answer.
