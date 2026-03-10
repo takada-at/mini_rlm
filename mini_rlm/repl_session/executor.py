@@ -116,7 +116,7 @@ def execute_repl_session_loop(
         - iteration_limit: 100 iterations
         - timeout_seconds: 60 seconds
         - error_threshold: 5 errors
-        - history_limit: 50 entries
+        - compacting_threshold_rate: 0.85 (when total tokens exceed 85% of token_limit, trigger compacting)
 
     Command dispatch flow:
         1. reduce_repl_session determines the next command
@@ -151,7 +151,6 @@ def execute_repl_session_loop(
         iteration_limit=100,
         timeout_seconds=600.0,
         error_threshold=5,
-        history_limit=50,
     )
 
     state = ReplSessionState(
@@ -212,7 +211,12 @@ def execute_repl_session_loop(
             continue
 
         if command.type == ReplSessionCommandType.COMPACTING:
-            prev_result = execute_compacting(command, state)
+            prev_result = execute_compacting(
+                command,
+                state,
+                request_context=request_context,
+                function_collection=repl_context.functions,
+            )
             _log_result(prev_result)
             continue
 

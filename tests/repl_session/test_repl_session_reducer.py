@@ -22,7 +22,6 @@ def build_state(**updates: object) -> ReplSessionState:
             iteration_limit=3,
             timeout_seconds=60.0,
             error_threshold=2,
-            history_limit=5,
         ),
         started_at_seconds=0.0,
         current_time_seconds=10.0,
@@ -130,11 +129,12 @@ def test_append_history_update_messages() -> None:
 
 
 def test_reduce_repl_session_history_over_limit_returns_compacting() -> None:
-    # give: 履歴長が上限を超えている
+    # give: トークンが上限を超えている
     prev_state = build_state(
         messages=[
             MessageContent(role="user", content=f"message {i}") for i in range(11)
         ],
+        total_tokens=90,
     )
     # when: reducerを実行する
     next_state, command = reduce_repl_session(prev_state, None)

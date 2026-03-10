@@ -44,7 +44,7 @@ class ReplSessionLimits(BaseModel):
     iteration_limit: int
     timeout_seconds: float
     error_threshold: int
-    history_limit: int
+    compacting_threshold_rate: float = 0.85
 
 
 class ReplSessionCommand(BaseModel):
@@ -91,6 +91,15 @@ class ReplSessionState(BaseModel):
     # This is the full history of code executions and their results, used for final output and debugging.
 
     final_answer: str | None = None
+
+    def is_token_limit_exceeded(self) -> bool:
+        return self.total_tokens > self.limits.token_limit
+
+    def is_compaction_limit_exceeded(self) -> bool:
+        return (
+            self.total_tokens
+            > self.limits.token_limit * self.limits.compacting_threshold_rate
+        )
 
 
 class ReplSessionResult(BaseModel):

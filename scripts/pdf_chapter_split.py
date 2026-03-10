@@ -108,7 +108,6 @@ def run_repl(
         iteration_limit=100,
         timeout_seconds=3600.0,
         error_threshold=5,
-        history_limit=50,
     )
     try:
         return run_repl_session(

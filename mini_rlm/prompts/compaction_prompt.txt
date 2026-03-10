@@ -1,0 +1,5 @@
+Summarize your progress so far. Include:
+1. Which steps/sub-tasks you have completed and which remain.
+2. Any concrete intermediate results (numbers, values, variable names) you computed — preserve these exactly.
+3. What your next action should be.
+Be concise (1–3 paragraphs) but preserve all key results and your current position in the task.

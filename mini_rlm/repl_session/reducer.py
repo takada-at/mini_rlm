@@ -43,7 +43,7 @@ def _check_termination(
     if state.is_cancelled:
         return _fail_and_exit(state, TerminationReason.CANCELLED)
 
-    if state.total_tokens > state.limits.token_limit:
+    if state.is_token_limit_exceeded():
         return _fail_and_exit(state, TerminationReason.TOKEN_LIMIT_EXCEEDED)
 
     if state.iteration_count >= state.limits.iteration_limit:
@@ -130,7 +130,7 @@ def _next_command_after_success(
         next_state = state.model_copy(
             update={"iteration_count": state.iteration_count + 1}
         )
-        if len(next_state.messages or []) > next_state.limits.history_limit:
+        if state.is_compaction_limit_exceeded():
             return _with_command(next_state, ReplSessionCommandType.COMPACTING)
         return _with_command(next_state, ReplSessionCommandType.CALL_LLM)
 
@@ -168,7 +168,7 @@ def reduce_repl_session(
         return check
 
     if prev_command_result is None:
-        if len(state.messages or []) > state.limits.history_limit:
+        if state.is_compaction_limit_exceeded():
             return _with_command(state, ReplSessionCommandType.COMPACTING)
         return _with_command(state, ReplSessionCommandType.CALL_LLM)
 

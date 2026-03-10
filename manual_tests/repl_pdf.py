@@ -114,7 +114,6 @@ def main() -> None:
         iteration_limit=100,
         timeout_seconds=3600.0,
         error_threshold=5,
-        history_limit=50,
     )
     try:
         result = run_repl_session(
