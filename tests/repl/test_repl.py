@@ -85,6 +85,17 @@ def test_execute_code_returns_last_expression_result(state):
     assert result.locals["x"] == 40
 
 
+def test_execute_code_uses_overwritten_global_name_for_last_expression(state):
+    # given: REPL グローバルに関数が登録されている
+    add_function(state, "double", lambda x: x * 2)
+    # when: 同一コードブロック内で同名変数に上書きして末尾式で参照する
+    result = execute_code(state, "double = 0\ndouble + 1")
+    # then: 末尾式は上書き後の値を参照し、次回実行では関数が復元される
+    assert result.expression_result == "1"
+    restored = execute_code(state, "print(double(21))")
+    assert restored.stdout == "42\n"
+
+
 def test_execute_code_returns_syntax_error_in_stderr(state):
     # given: 構文エラーを含むコードである
     # when: コードを実行する

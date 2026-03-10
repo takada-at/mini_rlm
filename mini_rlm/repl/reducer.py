@@ -103,6 +103,23 @@ def _extract_node_source(source: str, node: ast.AST) -> str:
     return _segment_from_lines(source_lines, start_line, start_col, end_line, end_col)
 
 
+def _statement_start_position(
+    source_lines: list[str],
+    statement: ast.stmt,
+) -> tuple[int | None, int | None]:
+    decorator_list = getattr(statement, "decorator_list", [])
+    if decorator_list:
+        first_decorator = decorator_list[0]
+        start_line = getattr(first_decorator, "lineno", None)
+        start_col = getattr(first_decorator, "col_offset", None)
+        if start_line is not None and start_col is not None:
+            if start_col > 0 and source_lines[start_line - 1][start_col - 1] == "@":
+                start_col -= 1
+            return start_line, start_col
+
+    return getattr(statement, "lineno", None), getattr(statement, "col_offset", None)
+
+
 def _extract_statement_source(source: str, statements: list[ast.stmt]) -> str:
     if not statements:
         return ""
@@ -110,9 +127,8 @@ def _extract_statement_source(source: str, statements: list[ast.stmt]) -> str:
     first_statement = statements[0]
     last_statement = statements[-1]
     source_lines = source.splitlines()
-    start_line = getattr(first_statement, "lineno", None)
+    start_line, start_col = _statement_start_position(source_lines, first_statement)
     end_line = getattr(last_statement, "end_lineno", None)
-    start_col = getattr(first_statement, "col_offset", None)
     end_col = getattr(last_statement, "end_col_offset", None)
     if None in (start_line, end_line, start_col, end_col):
         return "\n".join(ast.unparse(statement) for statement in statements)

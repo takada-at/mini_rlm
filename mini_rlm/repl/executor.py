@@ -43,6 +43,7 @@ def _temp_cwd(state: ReplState):
 def _restore_scaffold(state: ReplState) -> None:
     for name, value in state.reserved_globals.items():
         state.globals[name] = value
+        state.locals.pop(name, None)
 
     if "context_0" in state.locals and "context" not in state.reserved_globals:
         state.locals["context"] = state.locals["context_0"]
@@ -54,13 +55,17 @@ def _combine_namespace(state: ReplState) -> dict[str, Any]:
     return {**state.globals, **state.locals}
 
 
-def _promote_user_defined_names(
+def _persist_namespace_changes(
     state: ReplState,
     combined_namespace: dict[str, Any],
 ) -> None:
     for key, value in combined_namespace.items():
-        if key not in state.globals and not key.startswith("_"):
-            state.locals[key] = value
+        if key.startswith("_"):
+            continue
+        if key in state.globals:
+            state.globals[key] = value
+            continue
+        state.locals[key] = value
 
 
 def _result_from_command(
@@ -89,16 +94,14 @@ def _execute_statements(
         combined = _combine_namespace(repl_state)
         try:
             exec(code, combined, combined)  # noqa: S102
-            _promote_user_defined_names(repl_state, combined)
-            _restore_scaffold(repl_state)
+            _persist_namespace_changes(repl_state, combined)
             return _result_from_command(
                 command,
                 stdout=stdout_buf.getvalue(),
                 stderr=stderr_buf.getvalue(),
             )
         except Exception as error:
-            _promote_user_defined_names(repl_state, combined)
-            _restore_scaffold(repl_state)
+            _persist_namespace_changes(repl_state, combined)
             return _result_from_command(
                 command,
                 stdout=stdout_buf.getvalue(),
@@ -122,8 +125,7 @@ def _evaluate_expression(
         combined = _combine_namespace(repl_state)
         try:
             value = eval(code, combined, combined)  # noqa: S307
-            _promote_user_defined_names(repl_state, combined)
-            _restore_scaffold(repl_state)
+            _persist_namespace_changes(repl_state, combined)
             return _result_from_command(
                 command,
                 stdout=stdout_buf.getvalue(),
@@ -131,8 +133,7 @@ def _evaluate_expression(
                 expression_result=_display_value(value),
             )
         except Exception as error:
-            _promote_user_defined_names(repl_state, combined)
-            _restore_scaffold(repl_state)
+            _persist_namespace_changes(repl_state, combined)
             return _result_from_command(
                 command,
                 stdout=stdout_buf.getvalue(),
@@ -166,20 +167,30 @@ def execute_repl_execution(
         status=ReplExecutionStatus.RUNNING,
     )
     prev_result: ReplCommandResult | None = None
+    final_state: ReplExecutionState | None = None
 
-    while True:
-        execution_state, command = reduce_repl_execution(execution_state, prev_result)
-
-        if command.type in (ReplCommandType.COMPLETE, ReplCommandType.EXIT):
-            final_answer = repl_state.last_final_answer
-            repl_state.last_final_answer = None
-            return ReplResult(
-                stdout=execution_state.stdout,
-                stderr=execution_state.stderr,
-                locals=repl_state.locals.copy(),
-                execution_time=perf_counter() - start_time,
-                final_answer=final_answer,
-                expression_result=execution_state.expression_result,
+    try:
+        while True:
+            execution_state, command = reduce_repl_execution(
+                execution_state, prev_result
             )
 
-        prev_result = _execute_command(repl_state, command)
+            if command.type in (ReplCommandType.COMPLETE, ReplCommandType.EXIT):
+                final_state = execution_state
+                break
+
+            prev_result = _execute_command(repl_state, command)
+    finally:
+        _restore_scaffold(repl_state)
+
+    assert final_state is not None
+    final_answer = repl_state.last_final_answer
+    repl_state.last_final_answer = None
+    return ReplResult(
+        stdout=final_state.stdout,
+        stderr=final_state.stderr,
+        locals=repl_state.locals.copy(),
+        execution_time=perf_counter() - start_time,
+        final_answer=final_answer,
+        expression_result=final_state.expression_result,
+    )

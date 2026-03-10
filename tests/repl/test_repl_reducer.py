@@ -70,6 +70,18 @@ def test_reduce_repl_execution_starts_with_eval_when_code_is_single_expression()
     assert command.code == "1 + 1"
 
 
+def test_reduce_repl_execution_keeps_decorator_lines_in_statement_block() -> None:
+    # given: デコレータ付き定義の後ろに末尾式がある
+    prev_state = _state("@dec\ndef f():\n    return 1\nf()")
+    # when: 初回の reducer を呼ぶ
+    next_state, command = reduce_repl_execution(prev_state, None)
+    # then: 文ブロックにデコレータ行も含まれる
+    assert next_state.statement_code == "@dec\ndef f():\n    return 1"
+    assert next_state.final_expression_code == "f()"
+    assert command.type == ReplCommandType.EXECUTE_STATEMENTS
+    assert command.code == "@dec\ndef f():\n    return 1"
+
+
 def test_reduce_repl_execution_advances_to_eval_after_statement_execution() -> None:
     # given: 文実行後に式評価が必要な状態である
     parsed_state, _ = reduce_repl_execution(_state("x = 1\nx + 1"), None)
