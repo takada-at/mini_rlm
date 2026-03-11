@@ -71,6 +71,8 @@ def _apply_result(state: ReplSessionState, result: CommandResult) -> ReplSession
     next_state = state.model_copy(
         update={
             "total_tokens": state.total_tokens + result.consumed_tokens,
+            "current_history_tokens": state.current_history_tokens
+            + result.consumed_tokens,
             "is_complete": result.is_complete
             if result.is_complete is not None
             else state.is_complete,
@@ -140,7 +142,10 @@ def _next_command_after_success(
             "Compacting command result must include compacted_messages"
         )
         new_state = new_state.model_copy(
-            update={"messages": prev_command_result.compacted_messages}
+            update={
+                "messages": prev_command_result.compacted_messages,
+                "current_history_tokens": 0,
+            }
         )
         return new_state, next_command
 

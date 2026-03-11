@@ -134,7 +134,7 @@ def test_reduce_repl_session_history_over_limit_returns_compacting() -> None:
         messages=[
             MessageContent(role="user", content=f"message {i}") for i in range(11)
         ],
-        total_tokens=90,
+        current_history_tokens=90,
     )
     # when: reducerを実行する
     next_state, command = reduce_repl_session(prev_state, None)

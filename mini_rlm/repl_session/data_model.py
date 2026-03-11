@@ -77,6 +77,7 @@ class ReplSessionState(BaseModel):
     current_time_seconds: float
     iteration_count: int = 0
     total_tokens: int = 0
+    current_history_tokens: int = 0
     error_count: int = 0
     is_complete: bool = False
     is_cancelled: bool = False
@@ -97,7 +98,7 @@ class ReplSessionState(BaseModel):
 
     def is_compaction_limit_exceeded(self) -> bool:
         return (
-            self.total_tokens
+            self.current_history_tokens
             > self.limits.token_limit * self.limits.compacting_threshold_rate
         )
 

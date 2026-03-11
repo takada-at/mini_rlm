@@ -8,9 +8,11 @@ from mini_rlm.llm.data_model import (
     MessageContentPart,
     RequestContext,
 )
+from mini_rlm.llm.token_usage import get_token_usage_from_response
 
 __all__ = [
     "convert_messages_str",
+    "get_token_usage_from_response",
     "make_api_request",
     "APIRequestResult",
     "Endpoint",

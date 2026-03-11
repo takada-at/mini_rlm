@@ -139,6 +139,7 @@ def create_repl(
     }
     state.locals = {}
     state.reserved_globals = {
+        "FINAL": _final,
         "FINAL_VAR": _final_var,
         "SHOW_VARS": _show_vars,
     }

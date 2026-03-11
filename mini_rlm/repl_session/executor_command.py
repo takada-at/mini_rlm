@@ -11,6 +11,7 @@ from mini_rlm.llm import (
     MessageContent,
     RequestContext,
     convert_messages_str,
+    get_token_usage_from_response,
     make_api_request,
 )
 from mini_rlm.repl import ReplState, execute_code
@@ -52,10 +53,7 @@ def execute_call_llm(
             error_message="No messages returned from LLM",
         )
     last_message = convert_messages_str(res.messages)
-    total_tokens = 0
-    if "usage" in res.response_json:
-        if "total_tokens" in res.response_json["usage"]:
-            total_tokens = res.response_json["usage"]["total_tokens"]
+    total_tokens = get_token_usage_from_response(res)
     return CommandResult(
         type=ReplSessionResultType.SUCCESS,
         command_type=command.type,
@@ -197,7 +195,7 @@ def execute_compacting(
             "Total tokens %d exceeded compacting threshold. Compacting history...",
             session_state.total_tokens,
         )
-        new_messages = compact_history(request_context, messages)
+        new_messages, total_tokens = compact_history(request_context, messages)
         logger.debug(
             "Compacted history from %d messages to %d messages",
             len(messages),
@@ -211,6 +209,7 @@ def execute_compacting(
             type=ReplSessionResultType.SUCCESS,
             command_type=command.type,
             compacted_messages=new_messages,
+            consumed_tokens=total_tokens,
         )
     else:
         return CommandResult(
