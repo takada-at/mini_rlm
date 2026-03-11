@@ -124,6 +124,9 @@ def create_repl(
     def _final_var(variable_name: str | Any) -> str:
         return final_var(state, variable_name)
 
+    def _final(text: str) -> str:
+        return final(state, text)
+
     def _show_vars() -> str:
         return show_vars(state)
 
@@ -131,10 +134,12 @@ def create_repl(
         "__builtins__": SAFE_BUILTINS.copy(),
         "__name__": "__main__",
         "FINAL_VAR": _final_var,
+        "FINAL": _final,
         "SHOW_VARS": _show_vars,
     }
     state.locals = {}
     state.reserved_globals = {
+        "FINAL": _final,
         "FINAL_VAR": _final_var,
         "SHOW_VARS": _show_vars,
     }
@@ -176,6 +181,13 @@ def add_function(state: ReplState, name: str, fn: Any) -> None:
 # =============================================================================
 # Built-in REPL helpers (exposed as FINAL_VAR / SHOW_VARS inside the sandbox)
 # =============================================================================
+
+
+def final(state: ReplState, text: str) -> str:
+    """Return a string value as the final answer, or stringify a direct value."""
+    answer = str(text)
+    state.last_final_answer = answer
+    return answer
 
 
 def final_var(state: ReplState, variable_name: str | Any) -> str:

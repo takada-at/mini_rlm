@@ -11,9 +11,11 @@ from mini_rlm.llm import (
     MessageContent,
     RequestContext,
     convert_messages_str,
+    get_token_usage_from_response,
     make_api_request,
 )
 from mini_rlm.repl import ReplState, execute_code
+from mini_rlm.repl_session.compacting import compact_history
 from mini_rlm.repl_session.data_model import (
     CommandResult,
     ReplSessionCommand,
@@ -51,10 +53,7 @@ def execute_call_llm(
             error_message="No messages returned from LLM",
         )
     last_message = convert_messages_str(res.messages)
-    total_tokens = 0
-    if "usage" in res.response_json:
-        if "total_tokens" in res.response_json["usage"]:
-            total_tokens = res.response_json["usage"]["total_tokens"]
+    total_tokens = get_token_usage_from_response(res)
     return CommandResult(
         type=ReplSessionResultType.SUCCESS,
         command_type=command.type,
@@ -178,17 +177,39 @@ def execute_check_complete(
 def execute_compacting(
     command: ReplSessionCommand,
     session_state: ReplSessionState,
+    request_context: RequestContext,
+    function_collection: FunctionCollection | None = None,
 ) -> CommandResult:
     """Execute a COMPACTING command by compacting the session history and returning the result."""
-    messages = session_state.messages or []
-    history_limit = session_state.limits.history_limit
-    if len(messages) >= history_limit:
-        # simple compacting strategy: keep only the last N messages, where N is half of the history limit
-        new_messages = messages[-(history_limit // 2) :]
+    system_prompt = create_system_prompt(function_collection)
+    system_message = MessageContent(
+        role="system",
+        content=system_prompt,
+    )
+    logger = get_logger()
+    user_message = MessageContent(role="user", content=session_state.prompt)
+    history = session_state.messages or []
+    messages = [system_message, user_message] + history
+    if session_state.is_compaction_limit_exceeded():
+        logger.debug(
+            "Total tokens %d exceeded compacting threshold. Compacting history...",
+            session_state.total_tokens,
+        )
+        new_messages, total_tokens = compact_history(request_context, messages)
+        logger.debug(
+            "Compacted history from %d messages to %d messages",
+            len(messages),
+            len(new_messages),
+        )
+        logger.debug(
+            "New compacted messages:\n%s",
+            "\n".join([f"{m.role}: {m.content}" for m in new_messages]),
+        )
         return CommandResult(
             type=ReplSessionResultType.SUCCESS,
             command_type=command.type,
             compacted_messages=new_messages,
+            consumed_tokens=total_tokens,
         )
     else:
         return CommandResult(

@@ -2,6 +2,7 @@ import argparse
 import os
 import re
 from pathlib import Path
+from typing import Dict, Optional
 
 import pypdfium2 as pdfium
 import requests
@@ -15,22 +16,24 @@ from mini_rlm.repl_setup import setup_repl
 PROMPT_TOC_PAGE = """The pdf file {pdf_path} has already been added to the REPL working directory. 
 Please find the page number where the the table of contents starts and return the page number as an integer.
 From the table of contents, locate the starting page of Chapter {chapter_number} and the next chapter's starting page, then report your findings.
+Be cautious when using query_llm—it doesn't possess any information beyond what's in the input prompt. Asking it about the PDF content directly would be pointless.
+Also, LLM calls are slow, so please use them carefully.
 """
 
 PROMPT_PAGE_START = """The pdf file {pdf_path} has already been added to the REPL working directory. 
-Please find the page number where the Chapter {chapter_number} starts and return the page number as an integer.
-The following information was obtained from the table of contents. Note that the page numbers in the table of contents often differ from the actual PDF page numbers, so be sure to verify the information before providing the number.
-
-# Report
-{toc_report}
+Please find the page number where the Chapter {chapter_number} starts and return the page number as an integer(0-indexed).
+Be cautious when using query_llm—it doesn't possess any information beyond what's in the input prompt. Asking it about the PDF content directly would be pointless.
+The page numbers in the table of contents may differ from the actual PDF pages, so please verify the text.
+Chapter titles can provide important clues. Using query_pdf_llm to analyze page information is also a highly effective approach.
+Also, LLM calls are slow, so please use them carefully.
 """
 
 PROMPT_PAGE_END = """The pdf file {pdf_path} has already been added to the REPL working directory. 
-Please find the page number where the Chapter {chapter_number} ends and return the page number as an integer.
-The following information was obtained from the table of contents. Note that the page numbers in the table of contents often differ from the actual PDF page numbers, so be sure to verify the information before providing the number.
-
-# Report
-{toc_report}
+Please find the page number where the Chapter {chapter_number} ends and return the page number as an integer(0-indexed).
+Be cautious when using query_llm—it doesn't possess any information beyond what's in the input prompt. Asking it about the PDF content directly would be pointless.
+The page numbers in the table of contents may differ from the actual PDF pages, so please verify the text.
+Chapter titles can provide important clues. Using query_pdf_llm to analyze page information is also a highly effective approach.
+Also, LLM calls are slow, so please use them carefully.
 """
 
 MODEL = "openai/gpt-5.3-codex"
@@ -67,11 +70,16 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def create_context_payload(pdf_filename: str) -> dict[str, str]:
-    return {
+def create_context_payload(
+    pdf_filename: str, payload: Optional[Dict[str, str]] = None
+) -> Dict[str, str]:
+    res = {
         "pdf_path": pdf_filename,
         "note": "The PDF file in pdf_path has already been added to the REPL working directory.",
     }
+    if payload:
+        res.update(payload)
+    return res
 
 
 def print_result(
@@ -96,11 +104,12 @@ def run_repl(
     request_context2: RequestContext,
     pdf_path: Path,
     prompt: str,
+    payload: Optional[Dict[str, str]] = None,
 ) -> ReplSessionResult:
     repl_context = setup_repl(
         request_context=request_context2,
         file_pathes=[pdf_path],
-        context_payload=create_context_payload(pdf_path.name),
+        context_payload=create_context_payload(pdf_path.name, payload),
         functions=pdf_function_collection(),
     )
     limits = ReplSessionLimits(
@@ -108,7 +117,6 @@ def run_repl(
         iteration_limit=100,
         timeout_seconds=3600.0,
         error_threshold=5,
-        history_limit=50,
     )
     try:
         return run_repl_session(
@@ -170,6 +178,7 @@ def fetch_page_range(
         prompt=PROMPT_PAGE_START.format(
             pdf_path=pdf_path.name, chapter_number=chapter_num, toc_report=toc_report
         ),
+        payload={"toc_report": toc_report} if toc_report else None,
     )
     try:
         start_page = parse_page_number(result1.final_answer)
@@ -185,6 +194,7 @@ def fetch_page_range(
         prompt=PROMPT_PAGE_END.format(
             pdf_path=pdf_path.name, chapter_number=chapter_num, toc_report=toc_report
         ),
+        payload={"toc_report": toc_report} if toc_report else None,
     )
     try:
         end_page = parse_page_number(result2.final_answer)
@@ -238,6 +248,8 @@ def main() -> None:
     if not pdf_path.is_file():
         raise FileNotFoundError(f"PDF file not found: {pdf_path}")
     endpoint_url = require_env("API_ENDPOINT")
+    # e.g. openrouter.aiのエンドポイント:
+    # https://openrouter.ai/api/v1/chat/completions
     api_key = require_env("API_KEY")
     if args.save_path:
         save_path = args.save_path
