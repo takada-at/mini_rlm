@@ -104,6 +104,22 @@ def test_execute_code_returns_syntax_error_in_stderr(state):
     assert "SyntaxError" in result.stderr
 
 
+def test_execute_code_returns_consumed_tokens_delta_for_helper_calls(state):
+    # given: token usage を ledger に積む helper が登録されている
+    def consume_tokens() -> str:
+        state.usage_ledger.total_consumed_tokens += 17
+        return "ok"
+
+    add_function(state, "consume_tokens", consume_tokens)
+    # when: REPL 内で helper を呼ぶ
+    result = execute_code(state, "value = consume_tokens()\nprint(value)")
+    followup = execute_code(state, "print('next')")
+    # then: 実行中の token 増分だけが ReplResult.consumed_tokens に入る
+    assert result.stdout == "ok\n"
+    assert result.consumed_tokens == 17
+    assert followup.consumed_tokens == 0
+
+
 # =============================================================================
 # FINAL_VAR
 # =============================================================================

@@ -6,6 +6,7 @@ from mini_rlm.custom_functions.data_model import (
     FunctionBase,
     FunctionCollection,
     FunctionFactory,
+    FunctionFactoryContext,
 )
 from mini_rlm.custom_functions.function_collection_factory import (
     image_function_collection,
@@ -27,6 +28,7 @@ __all__ = [
     "FunctionBase",
     "FunctionCollection",
     "FunctionFactory",
+    "FunctionFactoryContext",
     "convert_function_collection_to_string",
     "convert_pdf_page_to_image_data_function",
     "convert_pdf_page_to_text_function",

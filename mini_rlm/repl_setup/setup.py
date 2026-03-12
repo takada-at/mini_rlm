@@ -5,6 +5,7 @@ from mini_rlm.custom_functions import (
     Function,
     FunctionCollection,
     FunctionFactory,
+    FunctionFactoryContext,
     image_function_collection,
 )
 from mini_rlm.debug_logger import get_logger
@@ -33,7 +34,13 @@ def setup_repl(
     logger = get_logger()
     for func in functions.functions:
         if isinstance(func, FunctionFactory):
-            pyfunc = func.factory(request_context)
+            pyfunc = func.factory(
+                FunctionFactoryContext(
+                    request_context=request_context,
+                    repl_state=state,
+                    function_collection=functions,
+                )
+            )
         else:
             assert isinstance(func, Function)
             pyfunc = func.function

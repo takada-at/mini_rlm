@@ -1,8 +1,13 @@
 from typing import Callable
 
-from mini_rlm.custom_functions.data_model import Argument, Function, FunctionFactory
+from mini_rlm.custom_functions.data_model import (
+    Argument,
+    Function,
+    FunctionFactory,
+    FunctionFactoryContext,
+)
 from mini_rlm.image import ImageData, open_image_data
-from mini_rlm.llm import RequestContext, query_functions
+from mini_rlm.llm import query_functions
 from mini_rlm.pdf import (
     convert_pdf_page_to_image_data,
     convert_pdf_page_to_text,
@@ -57,9 +62,21 @@ open_image_data_function = Function(
 )
 
 
-def create_query_llm(request_context: RequestContext) -> Callable[[str], str]:
+def _record_consumed_tokens(
+    factory_context: FunctionFactoryContext,
+    consumed_tokens: int,
+) -> None:
+    factory_context.repl_state.usage_ledger.total_consumed_tokens += consumed_tokens
+
+
+def create_query_llm(factory_context: FunctionFactoryContext) -> Callable[[str], str]:
     def query_llm(text: str) -> str:
-        return query_functions.text_query(request_context, text)
+        response_text, consumed_tokens = query_functions.text_query_with_usage(
+            factory_context.request_context,
+            text,
+        )
+        _record_consumed_tokens(factory_context, consumed_tokens)
+        return response_text
 
     return query_llm
 
@@ -74,10 +91,16 @@ query_llm_factory = FunctionFactory(
 
 
 def create_query_image_llm(
-    request_context: RequestContext,
+    factory_context: FunctionFactoryContext,
 ) -> Callable[[str, ImageData], str]:
     def query_image_llm(text: str, image_data: ImageData) -> str:
-        return query_functions.image_query(request_context, text, image_data)
+        response_text, consumed_tokens = query_functions.image_query_with_usage(
+            factory_context.request_context,
+            text,
+            image_data,
+        )
+        _record_consumed_tokens(factory_context, consumed_tokens)
+        return response_text
 
     return query_image_llm
 
@@ -124,11 +147,17 @@ query_image_llm_factory = FunctionFactory(
 
 
 def create_query_pdf_llm(
-    request_context: RequestContext,
+    factory_context: FunctionFactoryContext,
 ) -> Callable[[str, str, int], str]:
     def query_pdf_llm(text: str, pdf_path: str, page_index: int) -> str:
         image_data = convert_pdf_page_to_image_data(pdf_path, page_index)
-        return query_functions.image_query(request_context, text, image_data)
+        response_text, consumed_tokens = query_functions.image_query_with_usage(
+            factory_context.request_context,
+            text,
+            image_data,
+        )
+        _record_consumed_tokens(factory_context, consumed_tokens)
+        return response_text
 
     return query_pdf_llm
 
