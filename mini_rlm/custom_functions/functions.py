@@ -69,8 +69,8 @@ def _record_consumed_tokens(
     factory_context.repl_state.usage_ledger.total_consumed_tokens += consumed_tokens
 
 
-def create_query_llm(factory_context: FunctionFactoryContext) -> Callable[[str], str]:
-    def query_llm(text: str) -> str:
+def create_llm_query(factory_context: FunctionFactoryContext) -> Callable[[str], str]:
+    def llm_query(text: str) -> str:
         response_text, consumed_tokens = query_functions.text_query_with_usage(
             factory_context.request_context,
             text,
@@ -78,22 +78,22 @@ def create_query_llm(factory_context: FunctionFactoryContext) -> Callable[[str],
         _record_consumed_tokens(factory_context, consumed_tokens)
         return response_text
 
-    return query_llm
+    return llm_query
 
 
-query_llm_factory = FunctionFactory(
-    name="query_llm",
+llm_query_factory = FunctionFactory(
+    name="llm_query",
     description="Query the LLM with text input",
     arguments=[Argument(name="text", description="Text input for the LLM", type=str)],
     return_type=str,
-    factory=create_query_llm,
+    factory=create_llm_query,
 )
 
 
-def create_query_image_llm(
+def create_llm_image_query(
     factory_context: FunctionFactoryContext,
 ) -> Callable[[str, ImageData], str]:
-    def query_image_llm(text: str, image_data: ImageData) -> str:
+    def llm_image_query(text: str, image_data: ImageData) -> str:
         response_text, consumed_tokens = query_functions.image_query_with_usage(
             factory_context.request_context,
             text,
@@ -102,15 +102,15 @@ def create_query_image_llm(
         _record_consumed_tokens(factory_context, consumed_tokens)
         return response_text
 
-    return query_image_llm
+    return llm_image_query
 
 
-query_image_llm_factory = FunctionFactory(
-    name="query_image_llm",
+llm_image_query_factory = FunctionFactory(
+    name="llm_image_query",
     description="""Query the LLM with text and image input.
 Usage:
 ```
-result = query_image_llm(
+result = llm_image_query(
     text="Describe the image",
     image_data=open_image_data("path/to/image.jpg"),
 )
@@ -125,13 +125,13 @@ print(result)
             type=ImageData,
         ),
     ],
-    factory=create_query_image_llm,
+    factory=create_llm_image_query,
     return_type=str,
 )
 
 
-query_image_llm_factory = FunctionFactory(
-    name="query_image_llm",
+llm_image_query_factory = FunctionFactory(
+    name="llm_image_query",
     description="Query the LLM with text and image input",
     arguments=[
         Argument(name="text", description="Text input for the LLM", type=str),
@@ -142,14 +142,14 @@ query_image_llm_factory = FunctionFactory(
         ),
     ],
     return_type=str,
-    factory=create_query_image_llm,
+    factory=create_llm_image_query,
 )
 
 
-def create_query_pdf_llm(
+def create_llm_pdf_query(
     factory_context: FunctionFactoryContext,
 ) -> Callable[[str, str, int], str]:
-    def query_pdf_llm(text: str, pdf_path: str, page_index: int) -> str:
+    def llm_pdf_query(text: str, pdf_path: str, page_index: int) -> str:
         image_data = convert_pdf_page_to_image_data(pdf_path, page_index)
         response_text, consumed_tokens = query_functions.image_query_with_usage(
             factory_context.request_context,
@@ -159,11 +159,11 @@ def create_query_pdf_llm(
         _record_consumed_tokens(factory_context, consumed_tokens)
         return response_text
 
-    return query_pdf_llm
+    return llm_pdf_query
 
 
-query_pdf_llm_factory = FunctionFactory(
-    name="query_pdf_llm",
+llm_pdf_query_factory = FunctionFactory(
+    name="llm_pdf_query",
     description="Query the LLM with text and PDF input",
     arguments=[
         Argument(name="text", description="Text input for the LLM", type=str),
@@ -178,6 +178,6 @@ query_pdf_llm_factory = FunctionFactory(
             type=int,
         ),
     ],
-    factory=create_query_pdf_llm,
+    factory=create_llm_pdf_query,
     return_type=str,
 )
