@@ -2,8 +2,7 @@ import os
 
 import pypdfium2 as pdfium
 
-from mini_rlm.image.convert import convert_pil_image_to_image_data
-from mini_rlm.image.data_model import ImageData
+from mini_rlm.image import ImageData, convert_pil_image_to_image_data
 
 
 def convert_pdf_page_to_image_data(file_path: str, page_index: int) -> ImageData:

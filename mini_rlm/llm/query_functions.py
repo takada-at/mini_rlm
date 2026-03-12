@@ -1,8 +1,7 @@
 import re
 from typing import List
 
-from mini_rlm.image.convert import convert_image_data_to_image_url
-from mini_rlm.image.data_model import ImageData
+from mini_rlm.image import ImageData, convert_image_data_to_image_url
 from mini_rlm.llm.api_request import make_api_request
 from mini_rlm.llm.data_model import (
     APIRequestResult,

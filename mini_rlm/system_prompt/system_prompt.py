@@ -1,7 +1,9 @@
 from pathlib import Path
 
-from mini_rlm.custom_functions.convert import convert_function_collection_to_string
-from mini_rlm.custom_functions.data_model import FunctionCollection
+from mini_rlm.custom_functions import (
+    FunctionCollection,
+    convert_function_collection_to_string,
+)
 
 
 def create_system_prompt(collection: FunctionCollection | None = None) -> str:

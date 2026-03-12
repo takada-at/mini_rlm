@@ -114,7 +114,7 @@ SAFE_BUILTINS: dict[str, Any] = {
 
 def create_repl(
     setup_code: str | None = None,
-    context_payload: Dict[str, Any] | None = None,
+    context_payload: Dict[str, Any] | list[Any] | str | None = None,
 ) -> ReplState:
     """Create and initialise a new REPL state."""
     temp_dir = tempfile.mkdtemp(prefix=f"repl_env_{uuid.uuid4()}_")
@@ -263,7 +263,10 @@ def add_context(
     return context_index
 
 
-def load_context(state: ReplState, context_payload: Dict[str, Any] | None) -> None:
+def load_context(
+    state: ReplState,
+    context_payload: Dict[str, Any] | list[Any] | str | None,
+) -> None:
     """Shorthand: load *context_payload* as ``context_0`` / ``context``."""
     add_context(state, context_payload, 0)
 

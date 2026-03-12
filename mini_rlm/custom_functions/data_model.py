@@ -2,8 +2,9 @@ from typing import Any, Callable, List, Optional, Type
 
 from pydantic import BaseModel, ConfigDict
 
-from mini_rlm.llm.data_model import RequestContext
-from mini_rlm.repl.data_model import ReplState
+from mini_rlm.llm import RequestContext
+from mini_rlm.recursive_query import RecursiveQueryRuntime
+from mini_rlm.repl import ReplState
 
 
 class Argument(BaseModel):
@@ -29,6 +30,7 @@ class FunctionFactoryContext(BaseModel):
     request_context: RequestContext
     repl_state: ReplState
     function_collection: FunctionCollection | None = None
+    recursive_query_runtime: RecursiveQueryRuntime | None = None
 
 
 class FunctionFactory(FunctionBase):

@@ -5,14 +5,18 @@ The REPL environment is initialized with:
 2. A `SHOW_VARS()` function that returns all variables you have created in the REPL. Use this to check what variables exist before using FINAL_VAR.
 3. The `FINAL(string)` and `FINAL_VAR(var_name)` functions for submitting final answers.
 
-The REPL supports several functions, including LLM calls.
+The REPL supports several functions, including one-shot LLM calls and recursive REPL calls.
 
 {custom_tools_section}
+
+Use `llm_query` for small one-shot subquestions.
+Use `rlm_query` when a subproblem needs its own REPL iterations and tools.
 
 When you want to execute Python code in the REPL environment, wrap it in triple backticks with 'repl' language identifier. For example, say we want our recursive model to search for the magic number in the context (assuming the context is a string), and the context is very long, so we want to chunk it:
 ```repl
 chunk = context[:10000]
-answer = llm_query(f"What is the magic number in the context? Here is the chunk: {{chunk}}")
+question = f"What is the magic number in this chunk?\n\n{{chunk}}"
+answer = rlm_query(question)
 print(answer)
 ```
 

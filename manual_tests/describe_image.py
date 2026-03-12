@@ -10,7 +10,7 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from mini_rlm.image.convert import (  # noqa: E402
+from mini_rlm.image import (  # noqa: E402
     convert_image_data_to_image_url,
     open_image_data,
 )

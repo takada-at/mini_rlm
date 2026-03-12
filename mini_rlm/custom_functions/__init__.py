@@ -1,5 +1,6 @@
 from mini_rlm.custom_functions.convert import (
     convert_function_collection_to_string,
+    filter_function_collection_for_runtime,
 )
 from mini_rlm.custom_functions.data_model import (
     Function,
@@ -21,6 +22,7 @@ from mini_rlm.custom_functions.functions import (
     llm_query_factory,
     open_image_data_function,
     pdf_page_length_function,
+    rlm_query_factory,
 )
 
 __all__ = [
@@ -32,6 +34,7 @@ __all__ = [
     "convert_function_collection_to_string",
     "convert_pdf_page_to_image_data_function",
     "convert_pdf_page_to_text_function",
+    "filter_function_collection_for_runtime",
     "minimal_function_collection",
     "image_function_collection",
     "llm_image_query_factory",
@@ -40,4 +43,5 @@ __all__ = [
     "open_image_data_function",
     "pdf_function_collection",
     "pdf_page_length_function",
+    "rlm_query_factory",
 ]

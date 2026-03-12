@@ -6,10 +6,12 @@ from mini_rlm.custom_functions import (
     FunctionCollection,
     FunctionFactory,
     FunctionFactoryContext,
+    filter_function_collection_for_runtime,
     image_function_collection,
 )
 from mini_rlm.debug_logger import get_logger
-from mini_rlm.llm.data_model import RequestContext
+from mini_rlm.llm import RequestContext
+from mini_rlm.recursive_query import RecursiveQueryRuntime
 from mini_rlm.repl import add_file, add_function, create_repl
 from mini_rlm.repl_setup.data_model import ReplContext
 
@@ -17,9 +19,10 @@ from mini_rlm.repl_setup.data_model import ReplContext
 def setup_repl(
     request_context: RequestContext,
     setup_code: str | None = None,
-    context_payload: Dict[str, Any] | None = None,
+    context_payload: Dict[str, Any] | list[Any] | str | None = None,
     file_pathes: List[Path] | None = None,
     functions: FunctionCollection | None = None,
+    recursive_query_runtime: RecursiveQueryRuntime | None = None,
 ) -> ReplContext:
     """Create and initialise a new REPL instance."""
     state = create_repl(setup_code, context_payload)
@@ -31,6 +34,9 @@ def setup_repl(
                 add_file(state, file_path.name, f)
     if functions is None:
         functions = image_function_collection()
+    functions = filter_function_collection_for_runtime(
+        functions, recursive_query_runtime
+    )
     logger = get_logger()
     for func in functions.functions:
         if isinstance(func, FunctionFactory):
@@ -39,6 +45,7 @@ def setup_repl(
                     request_context=request_context,
                     repl_state=state,
                     function_collection=functions,
+                    recursive_query_runtime=recursive_query_runtime,
                 )
             )
         else:
@@ -51,4 +58,5 @@ def setup_repl(
         request_context=request_context,
         repl_state=state,
         functions=functions,
+        recursive_query_runtime=recursive_query_runtime,
     )
