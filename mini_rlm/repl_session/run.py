@@ -1,13 +1,15 @@
 from datetime import datetime
 
 from mini_rlm.llm import RequestContext
+from mini_rlm.repl import cleanup
 from mini_rlm.repl_session.data_model import (
+    ReplExecutionRequest,
     ReplSessionLimits,
     ReplSessionResult,
     TerminationReason,
 )
 from mini_rlm.repl_session.executor import execute_repl_session_loop
-from mini_rlm.repl_setup import ReplContext
+from mini_rlm.repl_setup import ReplContext, setup_repl
 
 
 def run_repl_session(
@@ -37,3 +39,24 @@ def run_repl_session(
         total_time_seconds=total_time_seconds,
         repl_history=last_state.repl_history,
     )
+
+
+def execute_repl_session(request: ReplExecutionRequest) -> ReplSessionResult:
+    """Set up a REPL, run a session, and always clean up the REPL state."""
+    repl_context = setup_repl(
+        request_context=request.setup.request_context,
+        setup_code=request.setup.setup_code,
+        context_payload=request.setup.context_payload,
+        file_pathes=request.setup.file_paths,
+        functions=request.setup.functions,
+        recursive_query_runtime=request.setup.recursive_query_runtime,
+    )
+    try:
+        return run_repl_session(
+            repl_context=repl_context,
+            prompt=request.prompt,
+            limits=request.limits,
+            request_context=request.session_request_context,
+        )
+    finally:
+        cleanup(repl_context.repl_state)

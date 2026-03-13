@@ -1,28 +1,18 @@
 import argparse
 import os
-import sys
 from pathlib import Path
-from typing import Literal, Sequence, cast
+from typing import Sequence
 
-import requests
-
-ROOT_DIR = Path(__file__).resolve().parents[1]
-if str(ROOT_DIR) not in sys.path:
-    sys.path.insert(0, str(ROOT_DIR))
-
-from mini_rlm.image.convert import (  # noqa: E402
-    convert_image_data_to_image_url,
-    open_image_data,
-)
-from mini_rlm.llm import (  # noqa: E402
-    Endpoint,
-    ImageURL,
+from mini_rlm import (
     MessageContent,
-    MessageContentPart,
-    RequestContext,
     convert_messages_str,
+    create_message_content,
+    create_request_context,
     make_api_request,
 )
+
+ROOT_DIR = Path(__file__).resolve().parents[1]
+
 
 ENDPOINT_ENV = "MINI_RLM_LLM_ENDPOINT"
 API_KEY_ENV = "MINI_RLM_LLM_API_KEY"
@@ -61,50 +51,6 @@ def require_env(name: str) -> str:
     return value
 
 
-def create_request_context(
-    endpoint_url: str, api_key: str, model: str | None
-) -> RequestContext:
-    kwargs = {}
-    if model is not None:
-        kwargs["model"] = model
-    return RequestContext(
-        session=requests.Session(),
-        endpoint=Endpoint(
-            url=endpoint_url,
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-            },
-        ),
-        kwargs=kwargs,
-    )
-
-
-def create_messages(
-    image_path: str,
-    prompt: str,
-    detail: str,
-) -> list[MessageContent]:
-    image_data = open_image_data(image_path)
-    image_url = convert_image_data_to_image_url(image_data)
-    assert detail in ["low", "high", "auto"], "Invalid detail value"
-    return [
-        MessageContent(
-            role="user",
-            content=[
-                MessageContentPart(type="text", text=prompt),
-                MessageContentPart(  # type: ignore
-                    type="image_url",
-                    image_url=ImageURL(
-                        url=image_url,
-                        detail=cast(Literal["low", "high", "auto"], detail),
-                    ),  # type: ignore
-                ),
-            ],
-        )
-    ]
-
-
 def validate_response(messages: Sequence[MessageContent]) -> str:
     if not messages:
         raise RuntimeError("The LLM response did not include any messages.")
@@ -120,12 +66,11 @@ def main() -> None:
         api_key=api_key,
         model=args.model,
     )
-    messages = create_messages(
-        image_path=args.image_path,
+    message = create_message_content(
+        image_path=Path(args.image_path),
         prompt=args.prompt.format(image_path=args.image_path),
-        detail=args.detail,
     )
-    result = make_api_request(context=context, messages=messages)
+    result = make_api_request(context=context, messages=[message])
     print(validate_response(result.messages))
 
 

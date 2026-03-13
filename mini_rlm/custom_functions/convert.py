@@ -7,6 +7,7 @@ from mini_rlm.custom_functions.data_model import (
     FunctionBase,
     FunctionCollection,
 )
+from mini_rlm.recursive_query import RecursiveQueryRuntime
 
 
 def convert_to_function(func: Callable[..., Any]) -> Function:
@@ -85,5 +86,20 @@ def convert_function_collection_to_string(func_collection: FunctionCollection) -
         [
             f"```\n{convert_function_to_string(func)}\n```"
             for func in func_collection.functions
+        ]
+    )
+
+
+def filter_function_collection_for_runtime(
+    function_collection: FunctionCollection,
+    runtime: RecursiveQueryRuntime | None,
+) -> FunctionCollection:
+    if runtime is None or runtime.remaining_depth > 0:
+        return FunctionCollection(functions=list(function_collection.functions))
+    return FunctionCollection(
+        functions=[
+            function
+            for function in function_collection.functions
+            if function.name != "rlm_query"
         ]
     )

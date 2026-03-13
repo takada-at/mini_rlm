@@ -3,13 +3,16 @@ import os
 from pathlib import Path
 
 from manual_tests.describe_image import (  # noqa: E402
-    create_request_context,
     require_env,
 )
-from mini_rlm.custom_functions import pdf_function_collection
-from mini_rlm.repl import cleanup  # noqa: E402
-from mini_rlm.repl_session import ReplSessionLimits, run_repl_session  # noqa: E402
-from mini_rlm.repl_setup import setup_repl  # noqa: E402
+from mini_rlm import (
+    ReplExecutionRequest,
+    ReplSessionLimits,
+    ReplSetupRequest,
+    create_request_context,
+    execute_repl_session,
+    pdf_function_collection,
+)
 
 DEFAULT_PROMPT = """The pdf file {pdf_path} has already been added to the REPL working directory. 
 Please find the page number where the Chapter 2 starts and return the page number as an integer.
@@ -103,27 +106,25 @@ def main() -> None:
         )
     else:
         request_context_main = request_context_sub
-    repl_context = setup_repl(
-        request_context=request_context_sub,
-        file_pathes=[pdf_path],
-        context_payload=create_context_payload(pdf_path.name),
-        functions=pdf_function_collection(),
-    )
     limits = ReplSessionLimits(
         token_limit=1_000_000,
         iteration_limit=100,
         timeout_seconds=3600.0,
         error_threshold=5,
     )
-    try:
-        result = run_repl_session(
-            repl_context=repl_context,
+    result = execute_repl_session(
+        ReplExecutionRequest(
             prompt=args.prompt.format(pdf_path=pdf_path.name),
+            setup=ReplSetupRequest(
+                request_context=request_context_sub,
+                file_paths=[pdf_path],
+                context_payload=create_context_payload(pdf_path.name),
+                functions=pdf_function_collection(),
+            ),
             limits=limits,
-            request_context=request_context_main,
+            session_request_context=request_context_main,
         )
-    finally:
-        cleanup(repl_context.repl_state)
+    )
 
     print_result(
         final_answer=result.final_answer,

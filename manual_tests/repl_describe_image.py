@@ -1,24 +1,22 @@
 import argparse
 import os
-import sys
 from pathlib import Path
-
-ROOT_DIR = Path(__file__).resolve().parents[1]
-if str(ROOT_DIR) not in sys.path:
-    sys.path.insert(0, str(ROOT_DIR))
 
 from manual_tests.describe_image import (  # noqa: E402
     API_KEY_ENV,
     DEFAULT_PROMPT,
     ENDPOINT_ENV,
     MODEL_ENV,
-    create_request_context,
     require_env,
 )
-from mini_rlm.repl import cleanup  # noqa: E402
-from mini_rlm.repl_session import run_repl_session  # noqa: E402
-from mini_rlm.repl_setup import setup_repl  # noqa: E402
+from mini_rlm import (
+    ReplExecutionRequest,
+    ReplSetupRequest,
+    create_request_context,
+    execute_repl_session,
+)
 
+ROOT_DIR = Path(__file__).resolve().parents[1]
 DEFAULT_IMAGE_PATH = ROOT_DIR / "manual_tests" / "images" / "hello_world.png"
 
 
@@ -101,19 +99,17 @@ def main() -> None:
         model=sub_model,
     )
 
-    repl_context = setup_repl(
-        request_context=request_context,
-        file_pathes=[image_path],
-        context_payload=create_context_payload(image_path.name),
-    )
-    try:
-        result = run_repl_session(
-            repl_context=repl_context,
+    result = execute_repl_session(
+        ReplExecutionRequest(
             prompt=args.prompt.format(image_path=image_path.name),
-            request_context=request_context_main,
+            setup=ReplSetupRequest(
+                request_context=request_context,
+                file_paths=[image_path],
+                context_payload=create_context_payload(image_path.name),
+            ),
+            session_request_context=request_context_main,
         )
-    finally:
-        cleanup(repl_context.repl_state)
+    )
 
     print_result(
         final_answer=result.final_answer,

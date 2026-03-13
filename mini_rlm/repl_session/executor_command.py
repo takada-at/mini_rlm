@@ -80,8 +80,10 @@ def execute_execute_command(
     )
     code_blocks = find_code_blocks(session_state.last_llm_message)
     results = []
+    consumed_tokens = 0
     for code in code_blocks:
         exec_result = execute_code(state=repl, code=code)
+        consumed_tokens += exec_result.consumed_tokens
         results.append(ReplSessionHistoryEntry(code=code, repl_result=exec_result))
     if not code_blocks:
         logger.warning(
@@ -93,6 +95,7 @@ def execute_execute_command(
     return CommandResult(
         type=ReplSessionResultType.SUCCESS,
         command_type=command.type,
+        consumed_tokens=consumed_tokens,
         repl_results=results,
     )
 

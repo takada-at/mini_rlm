@@ -5,11 +5,16 @@ from typing import Any, Dict
 from pydantic import BaseModel, ConfigDict, Field
 
 
+class UsageLedger(BaseModel):
+    total_consumed_tokens: int = 0
+
+
 class ReplResult(BaseModel):
     stdout: str
     stderr: str
     locals: dict[str, Any]
     execution_time: float
+    consumed_tokens: int = 0
     final_answer: str | None = None
     expression_result: str | None = None
 
@@ -24,6 +29,7 @@ class ReplState(BaseModel):
     last_final_answer: str | None = None
     context_count: int = 0
     history_count: int = 0
+    usage_ledger: UsageLedger = Field(default_factory=UsageLedger)
     # scaffold functions to restore after each execution
     reserved_globals: dict[str, Any] = Field(default_factory=dict)
 

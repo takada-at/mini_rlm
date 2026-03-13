@@ -5,35 +5,36 @@ from pathlib import Path
 from typing import Dict, Optional
 
 import pypdfium2 as pdfium
-import requests
 
-from mini_rlm.custom_functions import pdf_function_collection
-from mini_rlm.llm import Endpoint, RequestContext
-from mini_rlm.repl import cleanup
-from mini_rlm.repl_session import ReplSessionLimits, ReplSessionResult, run_repl_session
-from mini_rlm.repl_setup import setup_repl
+from mini_rlm import (
+    ReplExecutionRequest,
+    ReplSessionLimits,
+    ReplSessionResult,
+    ReplSetupRequest,
+    RequestContext,
+    create_request_context,
+    execute_repl_session,
+    pdf_function_collection,
+)
 
 PROMPT_TOC_PAGE = """The pdf file {pdf_path} has already been added to the REPL working directory. 
 Please find the page number where the the table of contents starts and return the page number as an integer.
 From the table of contents, locate the starting page of Chapter {chapter_number} and the next chapter's starting page, then report your findings.
-Be cautious when using query_llm—it doesn't possess any information beyond what's in the input prompt. Asking it about the PDF content directly would be pointless.
-Also, LLM calls are slow, so please use them carefully.
+Be cautious when using llm_query—it doesn't possess any information beyond what's in the input prompt. Asking it about the PDF content directly would be pointless.
 """
 
 PROMPT_PAGE_START = """The pdf file {pdf_path} has already been added to the REPL working directory. 
 Please find the page number where the Chapter {chapter_number} starts and return the page number as an integer(0-indexed).
-Be cautious when using query_llm—it doesn't possess any information beyond what's in the input prompt. Asking it about the PDF content directly would be pointless.
+Be cautious when using llm_query—it doesn't possess any information beyond what's in the input prompt. Asking it about the PDF content directly would be pointless.
 The page numbers in the table of contents may differ from the actual PDF pages, so please verify the text.
-Chapter titles can provide important clues. Using query_pdf_llm to analyze page information is also a highly effective approach.
-Also, LLM calls are slow, so please use them carefully.
+Chapter titles can provide important clues. Using llm_query_pdf to analyze page information is also a highly effective approach.
 """
 
 PROMPT_PAGE_END = """The pdf file {pdf_path} has already been added to the REPL working directory. 
 Please find the page number where the Chapter {chapter_number} ends and return the page number as an integer(0-indexed).
-Be cautious when using query_llm—it doesn't possess any information beyond what's in the input prompt. Asking it about the PDF content directly would be pointless.
+Be cautious when using llm_query—it doesn't possess any information beyond what's in the input prompt. Asking it about the PDF content directly would be pointless.
 The page numbers in the table of contents may differ from the actual PDF pages, so please verify the text.
-Chapter titles can provide important clues. Using query_pdf_llm to analyze page information is also a highly effective approach.
-Also, LLM calls are slow, so please use them carefully.
+Chapter titles can provide important clues. Using llm_query_pdf to analyze page information is also a highly effective approach.
 """
 
 MODEL = "openai/gpt-5.3-codex"
@@ -106,27 +107,25 @@ def run_repl(
     prompt: str,
     payload: Optional[Dict[str, str]] = None,
 ) -> ReplSessionResult:
-    repl_context = setup_repl(
-        request_context=request_context2,
-        file_pathes=[pdf_path],
-        context_payload=create_context_payload(pdf_path.name, payload),
-        functions=pdf_function_collection(),
-    )
     limits = ReplSessionLimits(
         token_limit=1_000_000,
         iteration_limit=100,
         timeout_seconds=3600.0,
         error_threshold=5,
     )
-    try:
-        return run_repl_session(
-            repl_context=repl_context,
+    return execute_repl_session(
+        ReplExecutionRequest(
             prompt=prompt,
+            setup=ReplSetupRequest(
+                request_context=request_context2,
+                file_paths=[pdf_path],
+                context_payload=create_context_payload(pdf_path.name, payload),
+                functions=pdf_function_collection(),
+            ),
             limits=limits,
-            request_context=request_context,
+            session_request_context=request_context,
         )
-    finally:
-        cleanup(repl_context.repl_state)
+    )
 
 
 def parse_page_number(final_answer: str | None) -> int:
@@ -255,31 +254,15 @@ def main() -> None:
         save_path = args.save_path
     else:
         save_path = pdf_path.parent
-    request_context = RequestContext(
-        session=requests.Session(),
-        endpoint=Endpoint(
-            url=endpoint_url,
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-            },
-        ),
-        kwargs={
-            "model": MODEL,
-        },
+    request_context = create_request_context(
+        endpoint_url=endpoint_url,
+        model=MODEL,
+        api_key=api_key,
     )
-    request_context2 = RequestContext(
-        session=requests.Session(),
-        endpoint=Endpoint(
-            url=endpoint_url,
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-            },
-        ),
-        kwargs={
-            "model": SUB_MODEL,
-        },
+    request_context2 = create_request_context(
+        endpoint_url=endpoint_url,
+        model=SUB_MODEL,
+        api_key=api_key,
     )
     main_task(request_context, request_context2, pdf_path, args.chapter, save_path)
 

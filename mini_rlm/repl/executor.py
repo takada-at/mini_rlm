@@ -162,6 +162,7 @@ def execute_repl_execution(
     code: str,
 ) -> ReplResult:
     start_time = perf_counter()
+    start_consumed_tokens = repl_state.usage_ledger.total_consumed_tokens
     execution_state = ReplExecutionState(
         code=code,
         status=ReplExecutionStatus.RUNNING,
@@ -186,11 +187,15 @@ def execute_repl_execution(
     assert final_state is not None
     final_answer = repl_state.last_final_answer
     repl_state.last_final_answer = None
+    consumed_tokens = (
+        repl_state.usage_ledger.total_consumed_tokens - start_consumed_tokens
+    )
     return ReplResult(
         stdout=final_state.stdout,
         stderr=final_state.stderr,
         locals=repl_state.locals.copy(),
         execution_time=perf_counter() - start_time,
+        consumed_tokens=consumed_tokens,
         final_answer=final_answer,
         expression_result=final_state.expression_result,
     )

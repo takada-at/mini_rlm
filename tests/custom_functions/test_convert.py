@@ -1,5 +1,9 @@
-from mini_rlm.custom_functions.convert import convert_function_to_string
-from mini_rlm.custom_functions.data_model import FunctionBase
+from mini_rlm.custom_functions.convert import (
+    convert_function_to_string,
+    filter_function_collection_for_runtime,
+)
+from mini_rlm.custom_functions.data_model import FunctionBase, FunctionCollection
+from mini_rlm.recursive_query.data_model import RecursiveQueryRuntime
 
 # =============================================================================
 # convert_function_to_string
@@ -122,3 +126,45 @@ def test_argument_descriptions_are_included_in_args_section():
     assert "Args:" in result
     assert "query (str): 検索語" in result
     assert "limit (int): 取得件数" in result
+
+
+def test_filter_function_collection_for_runtime_excludes_rlm_query_at_depth_zero():
+    # given: rlm_query を含む FunctionCollection と remaining_depth 0 の runtime がある
+    collection = FunctionCollection(
+        functions=[
+            FunctionBase(name="llm_query", description="", arguments=[]),
+            FunctionBase(name="rlm_query", description="", arguments=[]),
+            FunctionBase(name="llm_image_query", description="", arguments=[]),
+        ]
+    )
+    runtime = RecursiveQueryRuntime(remaining_depth=0)
+    # when: runtime に応じて function collection をフィルタする
+    filtered = filter_function_collection_for_runtime(collection, runtime)
+    # then: child では rlm_query だけが除外される
+    assert [function.name for function in filtered.functions] == [
+        "llm_query",
+        "llm_image_query",
+    ]
+    assert [function.name for function in collection.functions] == [
+        "llm_query",
+        "rlm_query",
+        "llm_image_query",
+    ]
+
+
+def test_filter_function_collection_for_runtime_keeps_rlm_query_when_depth_remains():
+    # given: rlm_query を含む FunctionCollection と remaining_depth 1 の runtime がある
+    collection = FunctionCollection(
+        functions=[
+            FunctionBase(name="llm_query", description="", arguments=[]),
+            FunctionBase(name="rlm_query", description="", arguments=[]),
+        ]
+    )
+    runtime = RecursiveQueryRuntime(remaining_depth=1)
+    # when: runtime に応じて function collection をフィルタする
+    filtered = filter_function_collection_for_runtime(collection, runtime)
+    # then: rlm_query は残る
+    assert [function.name for function in filtered.functions] == [
+        "llm_query",
+        "rlm_query",
+    ]
