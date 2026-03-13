@@ -1,4 +1,5 @@
 from mini_rlm.llm.api_request import make_api_request
+from mini_rlm.llm.context_factory import create_request_context
 from mini_rlm.llm.convert import convert_messages_str
 from mini_rlm.llm.data_model import (
     APIRequestResult,
@@ -8,6 +9,7 @@ from mini_rlm.llm.data_model import (
     MessageContentPart,
     RequestContext,
 )
+from mini_rlm.llm.message_factory import create_message_content
 from mini_rlm.llm.query_functions import (
     image_query,
     image_query_with_usage,
@@ -19,17 +21,19 @@ from mini_rlm.llm.token_usage import get_token_usage_from_response
 
 __all__ = [
     "convert_messages_str",
+    "create_message_content",
+    "create_request_context",
     "get_token_usage_from_response",
     "image_query",
     "image_query_with_usage",
     "make_api_request",
     "remove_think_tag_contents",
+    "text_query",
+    "text_query_with_usage",
     "APIRequestResult",
     "Endpoint",
     "ImageURL",
     "MessageContent",
     "MessageContentPart",
     "RequestContext",
-    "text_query",
-    "text_query_with_usage",
 ]

@@ -16,24 +16,21 @@ from mini_rlm.repl_setup import setup_repl
 PROMPT_TOC_PAGE = """The pdf file {pdf_path} has already been added to the REPL working directory. 
 Please find the page number where the the table of contents starts and return the page number as an integer.
 From the table of contents, locate the starting page of Chapter {chapter_number} and the next chapter's starting page, then report your findings.
-Be cautious when using query_llm—it doesn't possess any information beyond what's in the input prompt. Asking it about the PDF content directly would be pointless.
-Also, LLM calls are slow, so please use them carefully.
+Be cautious when using llm_query—it doesn't possess any information beyond what's in the input prompt. Asking it about the PDF content directly would be pointless.
 """
 
 PROMPT_PAGE_START = """The pdf file {pdf_path} has already been added to the REPL working directory. 
 Please find the page number where the Chapter {chapter_number} starts and return the page number as an integer(0-indexed).
-Be cautious when using query_llm—it doesn't possess any information beyond what's in the input prompt. Asking it about the PDF content directly would be pointless.
+Be cautious when using llm_query—it doesn't possess any information beyond what's in the input prompt. Asking it about the PDF content directly would be pointless.
 The page numbers in the table of contents may differ from the actual PDF pages, so please verify the text.
-Chapter titles can provide important clues. Using query_pdf_llm to analyze page information is also a highly effective approach.
-Also, LLM calls are slow, so please use them carefully.
+Chapter titles can provide important clues. Using llm_query_pdf to analyze page information is also a highly effective approach.
 """
 
 PROMPT_PAGE_END = """The pdf file {pdf_path} has already been added to the REPL working directory. 
 Please find the page number where the Chapter {chapter_number} ends and return the page number as an integer(0-indexed).
-Be cautious when using query_llm—it doesn't possess any information beyond what's in the input prompt. Asking it about the PDF content directly would be pointless.
+Be cautious when using llm_query—it doesn't possess any information beyond what's in the input prompt. Asking it about the PDF content directly would be pointless.
 The page numbers in the table of contents may differ from the actual PDF pages, so please verify the text.
-Chapter titles can provide important clues. Using query_pdf_llm to analyze page information is also a highly effective approach.
-Also, LLM calls are slow, so please use them carefully.
+Chapter titles can provide important clues. Using llm_query_pdf to analyze page information is also a highly effective approach.
 """
 
 MODEL = "openai/gpt-5.3-codex"
