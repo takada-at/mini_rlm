@@ -1,6 +1,12 @@
+from mini_rlm.custom_functions import (
+    image_function_collection,
+    minimal_function_collection,
+    pdf_function_collection,
+)
 from mini_rlm.llm import (
     MessageContent,
     RequestContext,
+    convert_messages_str,
     create_message_content,
     create_request_context,
     make_api_request,
@@ -22,6 +28,10 @@ __all__ = [
     "RequestContext",
     "create_message_content",
     "create_request_context",
+    "convert_messages_str",
     "execute_repl_session",
+    "image_function_collection",
     "make_api_request",
+    "minimal_function_collection",
+    "pdf_function_collection",
 ]

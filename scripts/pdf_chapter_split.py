@@ -14,8 +14,8 @@ from mini_rlm import (
     RequestContext,
     create_request_context,
     execute_repl_session,
+    pdf_function_collection,
 )
-from mini_rlm.custom_functions import pdf_function_collection
 
 PROMPT_TOC_PAGE = """The pdf file {pdf_path} has already been added to the REPL working directory. 
 Please find the page number where the the table of contents starts and return the page number as an integer.

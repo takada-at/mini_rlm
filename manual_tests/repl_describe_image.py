@@ -1,26 +1,22 @@
 import argparse
 import os
-import sys
 from pathlib import Path
-
-ROOT_DIR = Path(__file__).resolve().parents[1]
-if str(ROOT_DIR) not in sys.path:
-    sys.path.insert(0, str(ROOT_DIR))
 
 from manual_tests.describe_image import (  # noqa: E402
     API_KEY_ENV,
     DEFAULT_PROMPT,
     ENDPOINT_ENV,
     MODEL_ENV,
-    create_request_context,
     require_env,
 )
-from mini_rlm.repl_session import (  # noqa: E402
+from mini_rlm import (
     ReplExecutionRequest,
+    ReplSetupRequest,
+    create_request_context,
     execute_repl_session,
 )
-from mini_rlm.repl_setup import ReplSetupRequest  # noqa: E402
 
+ROOT_DIR = Path(__file__).resolve().parents[1]
 DEFAULT_IMAGE_PATH = ROOT_DIR / "manual_tests" / "images" / "hello_world.png"
 
 

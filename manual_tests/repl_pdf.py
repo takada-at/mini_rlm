@@ -3,16 +3,16 @@ import os
 from pathlib import Path
 
 from manual_tests.describe_image import (  # noqa: E402
-    create_request_context,
     require_env,
 )
-from mini_rlm.custom_functions import pdf_function_collection
-from mini_rlm.repl_session import (  # noqa: E402
+from mini_rlm import (
     ReplExecutionRequest,
     ReplSessionLimits,
+    ReplSetupRequest,
+    create_request_context,
     execute_repl_session,
+    pdf_function_collection,
 )
-from mini_rlm.repl_setup import ReplSetupRequest  # noqa: E402
 
 DEFAULT_PROMPT = """The pdf file {pdf_path} has already been added to the REPL working directory. 
 Please find the page number where the Chapter 2 starts and return the page number as an integer.
