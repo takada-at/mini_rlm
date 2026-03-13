@@ -13,9 +13,9 @@ from mini_rlm.recursive_query.data_model import (
     RecursiveQueryResult,
     RecursiveQueryRuntime,
 )
-from mini_rlm.repl import ReplState, cleanup
-from mini_rlm.repl_session import run_repl_session
-from mini_rlm.repl_setup import setup_repl
+from mini_rlm.repl import ReplState
+from mini_rlm.repl_session import ReplExecutionRequest, execute_repl_session
+from mini_rlm.repl_setup import ReplSetupRequest
 
 
 def execute_recursive_query(
@@ -32,21 +32,21 @@ def execute_recursive_query(
         parent_repl_state.temp_dir,
         config.inherit_parent_files,
     )
-    repl_context = setup_repl(
-        request_context=request_context,
-        context_payload=extract_inherited_context_payload(parent_repl_state.locals),
-        file_pathes=file_pathes,
-        functions=function_collection,
-        recursive_query_runtime=child_runtime,
-    )
-    try:
-        result = run_repl_session(
-            repl_context=repl_context,
+    result = execute_repl_session(
+        ReplExecutionRequest(
             prompt=request.prompt,
+            setup=ReplSetupRequest(
+                request_context=request_context,
+                context_payload=extract_inherited_context_payload(
+                    parent_repl_state.locals
+                ),
+                file_paths=file_pathes,
+                functions=function_collection,
+                recursive_query_runtime=child_runtime,
+            ),
             limits=build_child_repl_limits(config),
         )
-    finally:
-        cleanup(repl_context.repl_state)
+    )
     return RecursiveQueryResult(
         termination_reason=result.termination_reason.value,
         final_answer=result.final_answer,

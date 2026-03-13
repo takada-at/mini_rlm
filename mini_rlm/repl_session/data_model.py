@@ -1,10 +1,11 @@
 from enum import StrEnum
 from typing import List
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
-from mini_rlm.llm import MessageContent
+from mini_rlm.llm import MessageContent, RequestContext
 from mini_rlm.repl import ReplResult
+from mini_rlm.repl_setup import ReplSetupRequest
 
 
 class ReplSessionStatus(StrEnum):
@@ -45,6 +46,15 @@ class ReplSessionLimits(BaseModel):
     timeout_seconds: float
     error_threshold: int
     compacting_threshold_rate: float = 0.85
+
+
+class ReplExecutionRequest(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    prompt: str
+    setup: ReplSetupRequest
+    limits: ReplSessionLimits | None = None
+    session_request_context: RequestContext | None = None
 
 
 class ReplSessionCommand(BaseModel):
