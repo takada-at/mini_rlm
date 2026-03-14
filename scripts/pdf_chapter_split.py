@@ -189,6 +189,10 @@ def fetch_page_range(
         pdf_path=pdf_path,
         prompt=PROMPT_PAGES.format(pdf_path=pdf_path.name, chapter_number=chapter_num),
     )
+    for token_usage in result0.model_token_usages:
+        print(
+            f"Model: {token_usage.model_name}, Prompt tokens: {token_usage.prompt_tokens}, Completion tokens: {token_usage.completion_tokens}"
+        )
     try:
         start_page, end_page = parse_page_number(result0.final_answer)
     except Exception as e:

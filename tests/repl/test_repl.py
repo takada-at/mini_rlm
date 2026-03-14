@@ -1,5 +1,6 @@
 import pytest
 
+from mini_rlm.llm import ModelTokenUsage, merge_model_token_usages
 from mini_rlm.repl.repl import (
     add_context,
     add_function,
@@ -108,6 +109,16 @@ def test_execute_code_returns_consumed_tokens_delta_for_helper_calls(state):
     # given: token usage を ledger に積む helper が登録されている
     def consume_tokens() -> str:
         state.usage_ledger.total_consumed_tokens += 17
+        state.usage_ledger.model_token_usages = merge_model_token_usages(
+            state.usage_ledger.model_token_usages,
+            [
+                ModelTokenUsage(
+                    model_name="gpt-test",
+                    prompt_tokens=11.0,
+                    completion_tokens=6.0,
+                )
+            ],
+        )
         return "ok"
 
     add_function(state, "consume_tokens", consume_tokens)
@@ -117,7 +128,45 @@ def test_execute_code_returns_consumed_tokens_delta_for_helper_calls(state):
     # then: 実行中の token 増分だけが ReplResult.consumed_tokens に入る
     assert result.stdout == "ok\n"
     assert result.consumed_tokens == 17
+    assert result.model_token_usages == [
+        ModelTokenUsage(
+            model_name="gpt-test",
+            prompt_tokens=11.0,
+            completion_tokens=6.0,
+        )
+    ]
     assert followup.consumed_tokens == 0
+    assert followup.model_token_usages == []
+
+
+def test_execute_code_tracks_model_token_usages_when_helper_appends_in_place(state):
+    # given: helper が ledger のモデル別 usage を in-place append で更新する
+    def append_usage() -> str:
+        state.usage_ledger.total_consumed_tokens += 9
+        state.usage_ledger.model_token_usages.append(
+            ModelTokenUsage(
+                model_name="gpt-inline",
+                prompt_tokens=4.0,
+                completion_tokens=5.0,
+            )
+        )
+        return "ok"
+
+    add_function(state, "append_usage", append_usage)
+
+    # when: REPL 内で helper を呼ぶ
+    result = execute_code(state, "value = append_usage()\nprint(value)")
+
+    # then: 開始時スナップショットとの差分としてモデル別 usage が返る
+    assert result.stdout == "ok\n"
+    assert result.consumed_tokens == 9
+    assert result.model_token_usages == [
+        ModelTokenUsage(
+            model_name="gpt-inline",
+            prompt_tokens=4.0,
+            completion_tokens=5.0,
+        )
+    ]
 
 
 # =============================================================================

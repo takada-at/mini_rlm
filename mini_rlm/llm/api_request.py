@@ -60,12 +60,15 @@ def make_api_request(
     message = final_state.message
     if message is not None:
         return APIRequestResult(
-            response_json=final_state.response_json, messages=[message]
+            response_json=final_state.response_json,
+            messages=[message],
+            resolved_model_name=_resolve_model_name(final_state.response_json, context),
         )
     else:
         return APIRequestResult(
             response_json=final_state.response_json,
             messages=[],
+            resolved_model_name=_resolve_model_name(final_state.response_json, context),
         )
 
 
@@ -124,3 +127,18 @@ def run_api_request(
         random_fn=random.random,
     )
     return final_state
+
+
+def _resolve_model_name(
+    response_json: Dict[str, Any],
+    context: RequestContext,
+) -> str | None:
+    response_model_name = response_json.get("model")
+    if isinstance(response_model_name, str) and response_model_name != "":
+        return response_model_name
+    if context.kwargs is None:
+        return None
+    request_model_name = context.kwargs.get("model")
+    if isinstance(request_model_name, str) and request_model_name != "":
+        return request_model_name
+    return None

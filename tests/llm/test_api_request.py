@@ -65,3 +65,72 @@ def test_make_api_request_raises_when_retries_exhausted(
         _ = make_api_request(context, messages)
 
     assert session.request.call_count == 5
+
+
+def test_make_api_request_prefers_response_model_name(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # give: response と request の両方に model 名がある
+    session = cast(Any, requests.Session())
+    success_response = Mock()
+    success_response.raise_for_status.return_value = None
+    success_response.json.return_value = {
+        "model": "gpt-response",
+        "usage": {
+            "prompt_tokens": 3,
+            "completion_tokens": 4,
+            "total_tokens": 7,
+        },
+        "choices": [{"message": {"role": "assistant", "content": "ok"}}],
+    }
+    session.request = Mock(return_value=success_response)
+    context = RequestContext(
+        session=session,
+        endpoint=Endpoint(
+            url="https://example.com/v1/chat/completions", headers={"X-Test": "1"}
+        ),
+        kwargs={"model": "gpt-request"},
+    )
+    messages = [MessageContent(role="user", content="hello")]
+    monkeypatch.setattr("mini_rlm.llm.api_request.time.sleep", lambda _: None)
+    monkeypatch.setattr("mini_rlm.llm.api_request.random.random", lambda: 0.0)
+
+    # when: API リクエスト関数を実行する
+    result = make_api_request(context, messages)
+
+    # then: response の model 名が優先される
+    assert result.resolved_model_name == "gpt-response"
+
+
+def test_make_api_request_falls_back_to_request_model_name(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # give: response に model 名が無く、request 側には model 名がある
+    session = cast(Any, requests.Session())
+    success_response = Mock()
+    success_response.raise_for_status.return_value = None
+    success_response.json.return_value = {
+        "usage": {
+            "prompt_tokens": 3,
+            "completion_tokens": 4,
+            "total_tokens": 7,
+        },
+        "choices": [{"message": {"role": "assistant", "content": "ok"}}],
+    }
+    session.request = Mock(return_value=success_response)
+    context = RequestContext(
+        session=session,
+        endpoint=Endpoint(
+            url="https://example.com/v1/chat/completions", headers={"X-Test": "1"}
+        ),
+        kwargs={"model": "gpt-request"},
+    )
+    messages = [MessageContent(role="user", content="hello")]
+    monkeypatch.setattr("mini_rlm.llm.api_request.time.sleep", lambda _: None)
+    monkeypatch.setattr("mini_rlm.llm.api_request.random.random", lambda: 0.0)
+
+    # when: API リクエスト関数を実行する
+    result = make_api_request(context, messages)
+
+    # then: request の model 名で補完される
+    assert result.resolved_model_name == "gpt-request"

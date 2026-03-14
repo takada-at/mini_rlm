@@ -1,4 +1,6 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+from mini_rlm.llm import ModelTokenUsage
 
 
 class RecursiveQueryConfig(BaseModel):
@@ -24,4 +26,5 @@ class RecursiveQueryResult(BaseModel):
     final_answer: str | None
     total_iterations: int
     total_tokens: int
+    model_token_usages: list[ModelTokenUsage] = Field(default_factory=list)
     total_time_seconds: float

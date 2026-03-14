@@ -1,4 +1,4 @@
-from mini_rlm.llm.data_model import MessageContent
+from mini_rlm.llm.data_model import MessageContent, ModelTokenUsage
 from mini_rlm.repl.data_model import ReplResult
 from mini_rlm.repl_session.data_model import (
     CommandResult,
@@ -52,6 +52,54 @@ def test_reduce_repl_session_success_path_advances_commands() -> None:
     # then: execute_codeへ遷移する
     assert command.type == ReplSessionCommandType.EXECUTE_CODE
     assert next_state.total_tokens == 10
+
+
+def test_reduce_repl_session_merges_model_token_usages() -> None:
+    # give: 既存 state と直前結果の両方にモデル別 usage がある
+    prev_state = build_state(
+        last_command_type=ReplSessionCommandType.CALL_LLM,
+        model_token_usages=[
+            ModelTokenUsage(
+                model_name="gpt-main",
+                prompt_tokens=10.0,
+                completion_tokens=5.0,
+            )
+        ],
+    )
+    prev_result = CommandResult(
+        command_type=ReplSessionCommandType.CALL_LLM,
+        type=ReplSessionResultType.SUCCESS,
+        consumed_tokens=12,
+        model_token_usages=[
+            ModelTokenUsage(
+                model_name="gpt-main",
+                prompt_tokens=2.0,
+                completion_tokens=1.0,
+            ),
+            ModelTokenUsage(
+                model_name="gpt-helper",
+                prompt_tokens=4.0,
+                completion_tokens=5.0,
+            ),
+        ],
+    )
+
+    # when: reducer を実行する
+    next_state, _ = reduce_repl_session(prev_state, prev_result)
+
+    # then: モデル別 usage が model_name 単位で集約される
+    assert next_state.model_token_usages == [
+        ModelTokenUsage(
+            model_name="gpt-helper",
+            prompt_tokens=4.0,
+            completion_tokens=5.0,
+        ),
+        ModelTokenUsage(
+            model_name="gpt-main",
+            prompt_tokens=12.0,
+            completion_tokens=6.0,
+        ),
+    ]
 
 
 def test_call_llm_update_last_llm_message() -> None:

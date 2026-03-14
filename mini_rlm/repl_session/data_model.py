@@ -1,9 +1,9 @@
 from enum import StrEnum
 from typing import List
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
-from mini_rlm.llm import MessageContent, RequestContext
+from mini_rlm.llm import MessageContent, ModelTokenUsage, RequestContext
 from mini_rlm.repl import ReplResult
 from mini_rlm.repl_setup import ReplSetupRequest
 
@@ -70,6 +70,7 @@ class CommandResult(BaseModel):
     command_type: ReplSessionCommandType
     type: ReplSessionResultType
     consumed_tokens: int = 0
+    model_token_usages: list[ModelTokenUsage] = Field(default_factory=list)
     last_llm_message: str | None = None
     repl_results: List[ReplSessionHistoryEntry] | None = None
     is_complete: bool | None = None
@@ -87,6 +88,7 @@ class ReplSessionState(BaseModel):
     current_time_seconds: float
     iteration_count: int = 0
     total_tokens: int = 0
+    model_token_usages: list[ModelTokenUsage] = Field(default_factory=list)
     current_history_tokens: int = 0
     error_count: int = 0
     is_complete: bool = False
@@ -118,5 +120,6 @@ class ReplSessionResult(BaseModel):
     final_answer: str | None
     total_iterations: int
     total_tokens: int
+    model_token_usages: list[ModelTokenUsage] = Field(default_factory=list)
     total_time_seconds: float
     repl_history: List[ReplSessionHistoryEntry] | None = None

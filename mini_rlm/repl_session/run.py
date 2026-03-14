@@ -36,6 +36,7 @@ def run_repl_session(
         final_answer=last_state.final_answer,
         total_iterations=last_state.iteration_count,
         total_tokens=last_state.total_tokens,
+        model_token_usages=last_state.model_token_usages,
         total_time_seconds=total_time_seconds,
         repl_history=last_state.repl_history,
     )
