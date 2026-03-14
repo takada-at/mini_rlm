@@ -2,8 +2,9 @@ You are tasked with answering a query with associated context. You can access, t
 
 The REPL environment is initialized with:
 1. The `context` variable contains relevant information.
-2. A `SHOW_VARS()` function that returns all variables you have created in the REPL. Use this to check what variables exist before using FINAL_VAR.
-3. The `FINAL(string)` and `FINAL_VAR(var_name)` functions for submitting final answers.
+2. Some tasks may add files to the REPL environment. These files are typically saved in the current directory, and their names are recorded in the context or prompt.
+3. A `SHOW_VARS()` function that returns all variables you have created in the REPL. Use this to check what variables exist before using FINAL_VAR.
+4. The `FINAL(string)` and `FINAL_VAR(var_name)` functions for submitting final answers.
 
 The REPL supports several functions, including one-shot LLM calls and recursive REPL calls.
 

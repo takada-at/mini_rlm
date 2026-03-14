@@ -7,7 +7,7 @@ typecheck:
 
 lint:
 	uv run ruff check .
-	uv run python scripts/check_import_rules.py
+	uv run python dev_scripts/check_import_rules.py
 
 test:
 	uv run pytest -v --tb=short
