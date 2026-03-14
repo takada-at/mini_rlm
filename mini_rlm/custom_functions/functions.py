@@ -8,7 +8,12 @@ from mini_rlm.custom_functions.data_model import (
     FunctionFactoryContext,
 )
 from mini_rlm.image import ImageData, open_image_data
-from mini_rlm.llm import image_query_with_usage, text_query_with_usage
+from mini_rlm.llm import (
+    TokenUsage,
+    image_query_with_usage,
+    merge_model_token_usages,
+    text_query_with_usage,
+)
 from mini_rlm.pdf import (
     convert_pdf_page_to_image_data,
     convert_pdf_page_to_text,
@@ -63,20 +68,25 @@ open_image_data_function = Function(
 )
 
 
-def _record_consumed_tokens(
+def _record_token_usage(
     factory_context: FunctionFactoryContext,
-    consumed_tokens: int,
+    token_usage: TokenUsage,
 ) -> None:
-    factory_context.repl_state.usage_ledger.total_consumed_tokens += consumed_tokens
+    ledger = factory_context.repl_state.usage_ledger
+    ledger.total_consumed_tokens += token_usage.total_tokens
+    ledger.model_token_usages = merge_model_token_usages(
+        ledger.model_token_usages,
+        token_usage.model_token_usages,
+    )
 
 
 def create_llm_query(factory_context: FunctionFactoryContext) -> Callable[[str], str]:
     def llm_query(text: str) -> str:
-        response_text, consumed_tokens = text_query_with_usage(
+        response_text, token_usage = text_query_with_usage(
             factory_context.request_context,
             text,
         )
-        _record_consumed_tokens(factory_context, consumed_tokens)
+        _record_token_usage(factory_context, token_usage)
         return response_text
 
     return llm_query
@@ -96,7 +106,13 @@ def create_rlm_query(factory_context: FunctionFactoryContext) -> Callable[[str],
         except ValueError as error:
             raise RuntimeError(str(error)) from error
 
-        _record_consumed_tokens(factory_context, result.total_tokens)
+        _record_token_usage(
+            factory_context,
+            TokenUsage(
+                total_tokens=result.total_tokens,
+                model_token_usages=result.model_token_usages,
+            ),
+        )
         if result.final_answer is None:
             raise RuntimeError(
                 "rlm_query failed: "
@@ -145,12 +161,12 @@ def create_llm_image_query(
     factory_context: FunctionFactoryContext,
 ) -> Callable[[str, ImageData], str]:
     def llm_image_query(text: str, image_data: ImageData) -> str:
-        response_text, consumed_tokens = image_query_with_usage(
+        response_text, token_usage = image_query_with_usage(
             factory_context.request_context,
             text,
             image_data,
         )
-        _record_consumed_tokens(factory_context, consumed_tokens)
+        _record_token_usage(factory_context, token_usage)
         return response_text
 
     return llm_image_query
@@ -202,12 +218,12 @@ def create_llm_pdf_query(
 ) -> Callable[[str, str, int], str]:
     def llm_pdf_query(text: str, pdf_path: str, page_index: int) -> str:
         image_data = convert_pdf_page_to_image_data(pdf_path, page_index)
-        response_text, consumed_tokens = image_query_with_usage(
+        response_text, token_usage = image_query_with_usage(
             factory_context.request_context,
             text,
             image_data,
         )
-        _record_consumed_tokens(factory_context, consumed_tokens)
+        _record_token_usage(factory_context, token_usage)
         return response_text
 
     return llm_pdf_query

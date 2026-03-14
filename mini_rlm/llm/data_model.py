@@ -1,7 +1,7 @@
 from enum import StrEnum
 from typing import Any, Dict, List, Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from requests import Session
 
 
@@ -36,6 +36,17 @@ class RequestContext(BaseModel):
     endpoint: Endpoint
     kwargs: Dict[str, Any] | None = None
     messages: List[MessageContent] | None = None
+
+
+class ModelTokenUsage(BaseModel):
+    model_name: str
+    prompt_tokens: float
+    completion_tokens: float
+
+
+class TokenUsage(BaseModel):
+    total_tokens: int = 0
+    model_token_usages: List[ModelTokenUsage] = Field(default_factory=list)
 
 
 class RequestStatus(StrEnum):
@@ -105,3 +116,4 @@ class CommandResult(BaseModel):
 class APIRequestResult(BaseModel):
     response_json: Dict[str, Any]
     messages: List[MessageContent]
+    resolved_model_name: str | None = None

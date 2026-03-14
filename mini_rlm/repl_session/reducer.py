@@ -1,3 +1,4 @@
+from mini_rlm.llm import merge_model_token_usages
 from mini_rlm.repl_session.data_model import (
     CommandResult,
     ReplSessionCommand,
@@ -71,6 +72,10 @@ def _apply_result(state: ReplSessionState, result: CommandResult) -> ReplSession
     next_state = state.model_copy(
         update={
             "total_tokens": state.total_tokens + result.consumed_tokens,
+            "model_token_usages": merge_model_token_usages(
+                state.model_token_usages,
+                result.model_token_usages,
+            ),
             "current_history_tokens": state.current_history_tokens
             + result.consumed_tokens,
             "is_complete": result.is_complete

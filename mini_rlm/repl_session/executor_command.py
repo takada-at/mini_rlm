@@ -9,10 +9,12 @@ from mini_rlm.custom_functions import FunctionCollection
 from mini_rlm.debug_logger import get_logger
 from mini_rlm.llm import (
     MessageContent,
+    ModelTokenUsage,
     RequestContext,
     convert_messages_str,
-    get_token_usage_from_response,
+    get_detailed_token_usage_from_response,
     make_api_request,
+    merge_model_token_usages,
 )
 from mini_rlm.repl import ReplState, execute_code
 from mini_rlm.repl_session.compacting import compact_history
@@ -53,11 +55,12 @@ def execute_call_llm(
             error_message="No messages returned from LLM",
         )
     last_message = convert_messages_str(res.messages)
-    total_tokens = get_token_usage_from_response(res)
+    token_usage = get_detailed_token_usage_from_response(res)
     return CommandResult(
         type=ReplSessionResultType.SUCCESS,
         command_type=command.type,
-        consumed_tokens=total_tokens,
+        consumed_tokens=token_usage.total_tokens,
+        model_token_usages=token_usage.model_token_usages,
         last_llm_message=last_message,
     )
 
@@ -81,9 +84,14 @@ def execute_execute_command(
     code_blocks = find_code_blocks(session_state.last_llm_message)
     results = []
     consumed_tokens = 0
+    model_token_usages: list[ModelTokenUsage] = []
     for code in code_blocks:
         exec_result = execute_code(state=repl, code=code)
         consumed_tokens += exec_result.consumed_tokens
+        model_token_usages = merge_model_token_usages(
+            model_token_usages,
+            exec_result.model_token_usages,
+        )
         results.append(ReplSessionHistoryEntry(code=code, repl_result=exec_result))
     if not code_blocks:
         logger.warning(
@@ -96,6 +104,7 @@ def execute_execute_command(
         type=ReplSessionResultType.SUCCESS,
         command_type=command.type,
         consumed_tokens=consumed_tokens,
+        model_token_usages=model_token_usages,
         repl_results=results,
     )
 
@@ -198,7 +207,7 @@ def execute_compacting(
             "Total tokens %d exceeded compacting threshold. Compacting history...",
             session_state.total_tokens,
         )
-        new_messages, total_tokens = compact_history(request_context, messages)
+        new_messages, token_usage = compact_history(request_context, messages)
         logger.debug(
             "Compacted history from %d messages to %d messages",
             len(messages),
@@ -212,7 +221,8 @@ def execute_compacting(
             type=ReplSessionResultType.SUCCESS,
             command_type=command.type,
             compacted_messages=new_messages,
-            consumed_tokens=total_tokens,
+            consumed_tokens=token_usage.total_tokens,
+            model_token_usages=token_usage.model_token_usages,
         )
     else:
         return CommandResult(

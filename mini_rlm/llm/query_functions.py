@@ -9,8 +9,9 @@ from mini_rlm.llm.data_model import (
     MessageContent,
     MessageContentPart,
     RequestContext,
+    TokenUsage,
 )
-from mini_rlm.llm.token_usage import get_token_usage_from_response
+from mini_rlm.llm.token_usage import get_detailed_token_usage_from_response
 
 
 def message_content_parts_to_text(content_part: MessageContentPart) -> str:
@@ -38,21 +39,21 @@ def message_content_to_text(content: str | List[MessageContentPart]) -> str:
         raise ValueError("Unsupported content type")
 
 
-def _response_to_text_and_usage(response: APIRequestResult) -> tuple[str, int]:
+def _response_to_text_and_usage(response: APIRequestResult) -> tuple[str, TokenUsage]:
     response_messages = response.messages
-    consumed_tokens = get_token_usage_from_response(response)
+    token_usage = get_detailed_token_usage_from_response(response)
     if response_messages:
         return (
             remove_think_tag_contents(
                 message_content_to_text(response_messages[0].content)
             ),
-            consumed_tokens,
+            token_usage,
         )
     else:
-        return "", consumed_tokens
+        return "", token_usage
 
 
-def text_query_with_usage(context: RequestContext, text: str) -> tuple[str, int]:
+def text_query_with_usage(context: RequestContext, text: str) -> tuple[str, TokenUsage]:
     """Make a text query to the LLM API and return the response text with token usage."""
     messages = [MessageContent(role="user", content=text)]
     response = make_api_request(context, messages)
@@ -69,7 +70,7 @@ def image_query_with_usage(
     context: RequestContext,
     text: str,
     image_data: ImageData,
-) -> tuple[str, int]:
+) -> tuple[str, TokenUsage]:
     """Make an image query to the LLM API and return the response text with token usage."""
     image_url = convert_image_data_to_image_url(image_data)
     message_content = [
