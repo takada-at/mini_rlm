@@ -2,7 +2,7 @@ import argparse
 import os
 import re
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 
 import pypdfium2 as pdfium
 
@@ -17,28 +17,37 @@ from mini_rlm import (
     pdf_function_collection,
 )
 
-PROMPT_TOC_PAGE = """The pdf file {pdf_path} has already been added to the REPL working directory. 
-Please find the page number where the the table of contents starts and return the page number as an integer.
-From the table of contents, locate the starting page of Chapter {chapter_number} and the next chapter's starting page, then report your findings.
-Be cautious when using llm_query—it doesn't possess any information beyond what's in the input prompt. Asking it about the PDF content directly would be pointless.
-"""
-
-PROMPT_PAGE_START = """The pdf file {pdf_path} has already been added to the REPL working directory. 
-Please find the page number where the Chapter {chapter_number} starts and return the page number as an integer(0-indexed).
+PROMPT_PAGES = """The pdf file {pdf_path} has already been added to the REPL working directory. 
+(1)Please find the page number where the Chapter {chapter_number} starts and return the page number as an integer(0-indexed).
+(2)Please find the page number where the Chapter {chapter_number} ends and return the page number as an integer(0-indexed).
 Be cautious when using llm_query—it doesn't possess any information beyond what's in the input prompt. Asking it about the PDF content directly would be pointless.
 The page numbers in the table of contents may differ from the actual PDF pages, so please verify the text.
 Chapter titles can provide important clues. Using llm_query_pdf to analyze page information is also a highly effective approach.
-"""
 
-PROMPT_PAGE_END = """The pdf file {pdf_path} has already been added to the REPL working directory. 
-Please find the page number where the Chapter {chapter_number} ends and return the page number as an integer(0-indexed).
-Be cautious when using llm_query—it doesn't possess any information beyond what's in the input prompt. Asking it about the PDF content directly would be pointless.
-The page numbers in the table of contents may differ from the actual PDF pages, so please verify the text.
-Chapter titles can provide important clues. Using llm_query_pdf to analyze page information is also a highly effective approach.
+Flow:
+1. First, try to find the page numbers from the table of contents. If the table of contents is not available or doesn't include the chapter, return -1 for the start page or end page respectively.
+2. Then, try to find the start page by looking for the chapter title in the page content. If not found, return -1.
+3. Finally, try to find the end page by looking for the next chapter title in the page content. If not found, return -1.
+4. Check the consistency of the start and end page numbers found from different methods. If there are multiple candidates, use the most common page number. If there are conflicting page numbers, use the one found from the page content. If there is still a conflict, use the one with more evidence.
+5. Return the final start and end page numbers in the format of below. If the chapter is not found, return -1 for the start page or end page respectively.
+
+If failure occurs, analyze the cause and record the reason in the `failure_reason` variable.
+
+Answer in the following format:
+<start_page_number>,<end_page_number>
 """
 
 MODEL = "openai/gpt-5.3-codex"
 SUB_MODEL = "qwen/qwen3.5-35b-a3b"
+START_PAGE_PATTERN = re.compile(
+    r"\bstart(?:s|ing)?(?:[\s_-]*page(?:[\s_-]*number)?)?\b[^\d-]{0,40}(-?\d+)",
+    re.IGNORECASE,
+)
+END_PAGE_PATTERN = re.compile(
+    r"\bend(?:s|ing)?(?:[\s_-]*page(?:[\s_-]*number)?)?\b[^\d-]{0,40}(-?\d+)",
+    re.IGNORECASE,
+)
+PAGE_RANGE_PATTERN = re.compile(r"(-?\d+)\s*,\s*(-?\d+)")
 
 
 def require_env(name: str) -> str:
@@ -128,15 +137,29 @@ def run_repl(
     )
 
 
-def parse_page_number(final_answer: str | None) -> int:
+def extract_page_number(pattern: re.Pattern[str], final_answer: str) -> Optional[int]:
+    match = pattern.search(final_answer)
+    if match is None:
+        return None
+    return int(match.group(1))
+
+
+def parse_page_number(final_answer: str | None) -> Tuple[int, int]:
     if final_answer is None:
         raise RuntimeError("REPL session completed without a final_answer.")
-    match = re.search(r"\d+", final_answer)
-    if match is None:
-        raise RuntimeError(
-            f"Failed to parse page number from LLM response: {final_answer}"
+    start_page = extract_page_number(START_PAGE_PATTERN, final_answer)
+    end_page = extract_page_number(END_PAGE_PATTERN, final_answer)
+    if start_page is not None and end_page is not None:
+        return start_page, end_page
+
+    match = PAGE_RANGE_PATTERN.search(final_answer)
+    if not match:
+        raise ValueError(
+            f"Failed to parse page numbers from LLM response: {final_answer}"
         )
-    return int(match.group())
+    start_page = int(match.group(1))
+    end_page = int(match.group(2))
+    return start_page, end_page
 
 
 def resolve_output_path(
@@ -164,44 +187,14 @@ def fetch_page_range(
         request_context=request_context,
         request_context2=request_context2,
         pdf_path=pdf_path,
-        prompt=PROMPT_TOC_PAGE.format(
-            pdf_path=pdf_path.name, chapter_number=chapter_num
-        ),
-    )
-    toc_report = result0.final_answer
-    print(f"Table of contents report for chapter {chapter_num}: {toc_report}")
-    result1 = run_repl(
-        request_context=request_context,
-        request_context2=request_context2,
-        pdf_path=pdf_path,
-        prompt=PROMPT_PAGE_START.format(
-            pdf_path=pdf_path.name, chapter_number=chapter_num, toc_report=toc_report
-        ),
-        payload={"toc_report": toc_report} if toc_report else None,
+        prompt=PROMPT_PAGES.format(pdf_path=pdf_path.name, chapter_number=chapter_num),
     )
     try:
-        start_page = parse_page_number(result1.final_answer)
+        start_page, end_page = parse_page_number(result0.final_answer)
     except Exception as e:
         raise RuntimeError(
-            f"Failed to parse start page number from LLM response: {result1.final_answer}"
+            f"Failed to parse start page number from LLM response: {result0.final_answer}"
         ) from e
-    print(f"Chapter {chapter_num} starts at page {start_page}")
-    result2 = run_repl(
-        request_context=request_context,
-        request_context2=request_context2,
-        pdf_path=pdf_path,
-        prompt=PROMPT_PAGE_END.format(
-            pdf_path=pdf_path.name, chapter_number=chapter_num, toc_report=toc_report
-        ),
-        payload={"toc_report": toc_report} if toc_report else None,
-    )
-    try:
-        end_page = parse_page_number(result2.final_answer)
-    except Exception as e:
-        raise RuntimeError(
-            f"Failed to parse end page number from LLM response: {result2.final_answer}"
-        ) from e
-    print(f"Chapter {chapter_num} ends at page {end_page}")
     return start_page, end_page
 
 

@@ -5,7 +5,9 @@ from types import ModuleType
 
 
 def load_checker_module() -> ModuleType:
-    script_path = Path(__file__).resolve().parents[2] / "scripts/check_import_rules.py"
+    script_path = (
+        Path(__file__).resolve().parents[2] / "dev_scripts/check_import_rules.py"
+    )
     spec = importlib.util.spec_from_file_location("check_import_rules", script_path)
     assert spec is not None
     assert spec.loader is not None
