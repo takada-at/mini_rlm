@@ -139,6 +139,36 @@ def test_execute_code_returns_consumed_tokens_delta_for_helper_calls(state):
     assert followup.model_token_usages == []
 
 
+def test_execute_code_tracks_model_token_usages_when_helper_appends_in_place(state):
+    # given: helper が ledger のモデル別 usage を in-place append で更新する
+    def append_usage() -> str:
+        state.usage_ledger.total_consumed_tokens += 9
+        state.usage_ledger.model_token_usages.append(
+            ModelTokenUsage(
+                model_name="gpt-inline",
+                prompt_tokens=4.0,
+                completion_tokens=5.0,
+            )
+        )
+        return "ok"
+
+    add_function(state, "append_usage", append_usage)
+
+    # when: REPL 内で helper を呼ぶ
+    result = execute_code(state, "value = append_usage()\nprint(value)")
+
+    # then: 開始時スナップショットとの差分としてモデル別 usage が返る
+    assert result.stdout == "ok\n"
+    assert result.consumed_tokens == 9
+    assert result.model_token_usages == [
+        ModelTokenUsage(
+            model_name="gpt-inline",
+            prompt_tokens=4.0,
+            completion_tokens=5.0,
+        )
+    ]
+
+
 # =============================================================================
 # FINAL_VAR
 # =============================================================================

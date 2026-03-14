@@ -164,7 +164,10 @@ def execute_repl_execution(
 ) -> ReplResult:
     start_time = perf_counter()
     start_consumed_tokens = repl_state.usage_ledger.total_consumed_tokens
-    start_model_token_usages = repl_state.usage_ledger.model_token_usages
+    start_model_token_usages = [
+        usage.model_copy(deep=True)
+        for usage in repl_state.usage_ledger.model_token_usages
+    ]
     execution_state = ReplExecutionState(
         code=code,
         status=ReplExecutionStatus.RUNNING,

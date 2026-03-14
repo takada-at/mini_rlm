@@ -1,5 +1,6 @@
 from mini_rlm.llm.data_model import APIRequestResult, ModelTokenUsage
 from mini_rlm.llm.token_usage import (
+    diff_model_token_usages,
     get_detailed_token_usage_from_response,
     merge_model_token_usages,
 )
@@ -70,4 +71,39 @@ def test_merge_model_token_usages_merges_same_and_different_models() -> None:
             prompt_tokens=7.0,
             completion_tokens=1.0,
         ),
+    ]
+
+
+def test_diff_model_token_usages_merges_previous_snapshot_before_subtraction() -> None:
+    # give: 開始・終了スナップショットの両方に同一モデルの重複 record がある
+    previous = [
+        ModelTokenUsage(
+            model_name="gpt-4.1",
+            prompt_tokens=1.0,
+            completion_tokens=2.0,
+        ),
+        ModelTokenUsage(
+            model_name="gpt-4.1",
+            prompt_tokens=3.0,
+            completion_tokens=4.0,
+        ),
+    ]
+    current = previous + [
+        ModelTokenUsage(
+            model_name="gpt-4.1",
+            prompt_tokens=5.0,
+            completion_tokens=6.0,
+        )
+    ]
+
+    # when: スナップショット差分を計算する
+    diff = diff_model_token_usages(previous, current)
+
+    # then: 追加分だけが差分として返る
+    assert diff == [
+        ModelTokenUsage(
+            model_name="gpt-4.1",
+            prompt_tokens=5.0,
+            completion_tokens=6.0,
+        )
     ]

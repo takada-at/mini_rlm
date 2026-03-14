@@ -61,7 +61,10 @@ def diff_model_token_usages(
     current_usages: list[ModelTokenUsage],
 ) -> list[ModelTokenUsage]:
     """Return the per-model delta between two cumulative usage snapshots."""
-    merged_previous = {usage.model_name: usage for usage in previous_usages}
+    merged_previous = {
+        usage.model_name: usage
+        for usage in merge_model_token_usages([], previous_usages)
+    }
     deltas: list[ModelTokenUsage] = []
     for usage in merge_model_token_usages([], current_usages):
         previous = merged_previous.get(usage.model_name)
