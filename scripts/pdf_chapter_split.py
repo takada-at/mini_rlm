@@ -39,6 +39,15 @@ Answer in the following format:
 
 MODEL = "openai/gpt-5.3-codex"
 SUB_MODEL = "qwen/qwen3.5-35b-a3b"
+START_PAGE_PATTERN = re.compile(
+    r"\bstart(?:s|ing)?(?:[\s_-]*page(?:[\s_-]*number)?)?\b[^\d-]{0,40}(-?\d+)",
+    re.IGNORECASE,
+)
+END_PAGE_PATTERN = re.compile(
+    r"\bend(?:s|ing)?(?:[\s_-]*page(?:[\s_-]*number)?)?\b[^\d-]{0,40}(-?\d+)",
+    re.IGNORECASE,
+)
+PAGE_RANGE_PATTERN = re.compile(r"(-?\d+)\s*,\s*(-?\d+)")
 
 
 def require_env(name: str) -> str:
@@ -128,10 +137,22 @@ def run_repl(
     )
 
 
+def extract_page_number(pattern: re.Pattern[str], final_answer: str) -> Optional[int]:
+    match = pattern.search(final_answer)
+    if match is None:
+        return None
+    return int(match.group(1))
+
+
 def parse_page_number(final_answer: str | None) -> Tuple[int, int]:
     if final_answer is None:
         raise RuntimeError("REPL session completed without a final_answer.")
-    match = re.search(r"(-?\d+)\s*,\s*(-?\d+)", final_answer)
+    start_page = extract_page_number(START_PAGE_PATTERN, final_answer)
+    end_page = extract_page_number(END_PAGE_PATTERN, final_answer)
+    if start_page is not None and end_page is not None:
+        return start_page, end_page
+
+    match = PAGE_RANGE_PATTERN.search(final_answer)
     if not match:
         raise ValueError(
             f"Failed to parse page numbers from LLM response: {final_answer}"
