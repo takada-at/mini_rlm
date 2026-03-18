@@ -1,4 +1,6 @@
 import json
+from collections import Counter
+from hashlib import sha1
 from pathlib import Path
 from textwrap import dedent
 from typing import Any
@@ -33,11 +35,30 @@ def detect_attachment_kind(path: Path) -> AttachmentKind:
     return AttachmentKind.OTHER
 
 
+def _build_disambiguated_attachment_name(path: Path, suffix_index: int = 0) -> str:
+    digest_source = f"{path.as_posix()}::{suffix_index}"
+    digest = sha1(digest_source.encode("utf-8")).hexdigest()[:8]
+    return f"{path.stem}__{digest}{path.suffix}"
+
+
 def convert_paths_to_attachments(paths: list[Path]) -> list[AttachmentRef]:
-    return [
-        AttachmentRef(path=path, name=path.name, kind=detect_attachment_kind(path))
-        for path in paths
-    ]
+    unique_paths = list(dict.fromkeys(paths))
+    basename_counts = Counter(path.name for path in unique_paths)
+    used_names: set[str] = set()
+    attachments: list[AttachmentRef] = []
+    for path in unique_paths:
+        name = path.name
+        if basename_counts[path.name] > 1 or name in used_names:
+            suffix_index = 0
+            name = _build_disambiguated_attachment_name(path, suffix_index)
+            while name in used_names:
+                suffix_index += 1
+                name = _build_disambiguated_attachment_name(path, suffix_index)
+        used_names.add(name)
+        attachments.append(
+            AttachmentRef(path=path, name=name, kind=detect_attachment_kind(path))
+        )
+    return attachments
 
 
 def create_chat_system_prompt() -> str:
@@ -50,7 +71,15 @@ def build_attachment_summary(attachments: list[AttachmentRef]) -> str:
     if not attachments:
         return "- (none)"
     return "\n".join(
-        f"- {attachment.name} ({attachment.kind.value})" for attachment in attachments
+        (
+            f"- {attachment.name} ({attachment.kind.value})"
+            if attachment.name == attachment.path.name
+            else (
+                f"- {attachment.name} ({attachment.kind.value}; "
+                f"source: {attachment.path})"
+            )
+        )
+        for attachment in attachments
     )
 
 

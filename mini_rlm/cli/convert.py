@@ -11,6 +11,7 @@ from mini_rlm.chat_session import (
 from mini_rlm.cli.data_model import RunMode
 from mini_rlm.custom_functions import (
     image_function_collection,
+    merge_function_collections,
     minimal_function_collection,
     pdf_function_collection,
 )
@@ -58,9 +59,15 @@ def resolve_run_mode(
 ) -> RunMode:
     if mode != RunMode.AUTO:
         return mode
-    if any(attachment.kind == AttachmentKind.PDF for attachment in attachments):
+    has_pdf = any(attachment.kind == AttachmentKind.PDF for attachment in attachments)
+    has_image = any(
+        attachment.kind == AttachmentKind.IMAGE for attachment in attachments
+    )
+    if has_pdf and has_image:
+        return RunMode.AUTO
+    if has_pdf:
         return RunMode.PDF
-    if any(attachment.kind == AttachmentKind.IMAGE for attachment in attachments):
+    if has_image:
         return RunMode.IMAGE
     return RunMode.MINIMAL
 
@@ -70,6 +77,11 @@ def select_function_collection(
     attachments: list[AttachmentRef],
 ):
     resolved_mode = resolve_run_mode(mode, attachments)
+    if resolved_mode == RunMode.AUTO:
+        return merge_function_collections(
+            pdf_function_collection(),
+            image_function_collection(),
+        )
     if resolved_mode == RunMode.PDF:
         return pdf_function_collection()
     if resolved_mode == RunMode.IMAGE:

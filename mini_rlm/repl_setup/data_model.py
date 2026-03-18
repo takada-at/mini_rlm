@@ -16,8 +16,14 @@ class ReplSetupRequest(BaseModel):
     setup_code: str | None = None
     context_payload: dict[str, Any] | list[Any] | str | None = None
     file_paths: list[Path] | None = None
+    files: list["ReplFileRef"] | None = None
     functions: FunctionCollection | None = None
     recursive_query_runtime: RecursiveQueryRuntime | None = None
+
+
+class ReplFileRef(BaseModel):
+    source_path: Path
+    target_name: str | None = None
 
 
 class ReplContext(BaseModel):

@@ -9,15 +9,16 @@ from mini_rlm.cli.convert import (
 from mini_rlm.cli.data_model import RunMode
 
 
-def test_resolve_run_mode_prefers_pdf_when_pdf_is_attached() -> None:
-    # テストしたいふるまい: resolve_run_mode が AUTO モードのとき、PDF が添付されている場合は PDF ツールプリセットを選ぶこと
+def test_resolve_run_mode_keeps_auto_for_mixed_pdf_and_image_attachments() -> None:
+    # テストしたいふるまい: resolve_run_mode が AUTO モードで PDF と画像が混在している場合、
+    # 片方のプリセットに潰さず AUTO のままにすること
 
     # give: PDF と画像が両方添付されている
     attachments = convert_paths_to_attachments([Path("book.pdf"), Path("diagram.png")])
     # when: auto mode を解決する
     mode = resolve_run_mode(RunMode.AUTO, attachments)
-    # then: PDF tool preset が選ばれる
-    assert mode == RunMode.PDF
+    # then: mixed attachments のまま扱えるよう AUTO のまま残る
+    assert mode == RunMode.AUTO
 
 
 def test_select_function_collection_returns_image_tools_for_image_mode() -> None:
@@ -31,6 +32,20 @@ def test_select_function_collection_returns_image_tools_for_image_mode() -> None
     # then: 画像向け helper が含まれる
     assert "open_image_data" in function_names
     assert "llm_image_query" in function_names
+
+
+def test_select_function_collection_returns_mixed_tools_for_auto_mode() -> None:
+    # テストしたいふるまい: select_function_collection が AUTO モードで PDF と画像が混在している場合、
+    # 両方の helper を含む function collection を返すこと
+
+    # give: PDF と画像が両方添付されている
+    attachments = convert_paths_to_attachments([Path("book.pdf"), Path("diagram.png")])
+    # when: auto mode の function collection を選ぶ
+    functions = select_function_collection(RunMode.AUTO, attachments)
+    function_names = [function.name for function in functions.functions]
+    # then: PDF helper と image helper の両方が含まれる
+    assert "convert_pdf_page_to_text" in function_names
+    assert "open_image_data" in function_names
 
 
 def test_build_run_prompt_appends_attachment_summary() -> None:

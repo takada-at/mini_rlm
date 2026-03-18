@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 
 from mini_rlm.chat_session.convert import (
+    build_attachment_summary,
     build_forced_run_decision,
     build_run_context_payload,
     convert_paths_to_attachments,
@@ -71,3 +72,32 @@ def test_build_run_context_payload_sets_single_pdf_and_image_keys() -> None:
     assert payload["attached_files"] == ["book.pdf", "diagram.png"]
     assert payload["pdf_path"] == "book.pdf"
     assert payload["image_path"] == "diagram.png"
+
+
+def test_convert_paths_to_attachments_disambiguates_duplicate_basenames() -> None:
+    # テストしたいふるまい: basename が同じ添付ファイルが複数ある場合でも、
+    # convert_paths_to_attachments が一意な名前を割り当てること
+
+    # give: basename が同じ 2 つのファイルパスがある
+    paths = [Path("dir_a/report.pdf"), Path("dir_b/report.pdf")]
+    # when: 添付参照へ変換する
+    attachments = convert_paths_to_attachments(paths)
+    # then: 2 つとも残り、名前は衝突しない
+    assert [attachment.path for attachment in attachments] == paths
+    assert len({attachment.name for attachment in attachments}) == 2
+    assert all(attachment.name.endswith(".pdf") for attachment in attachments)
+    assert all(attachment.name != "report.pdf" for attachment in attachments)
+
+
+def test_build_attachment_summary_includes_source_for_disambiguated_names() -> None:
+    # テストしたいふるまい: disambiguated な添付名では、summary に source path も含まれること
+
+    # give: basename が同じ添付がある
+    attachments = convert_paths_to_attachments(
+        [Path("dir_a/report.pdf"), Path("dir_b/report.pdf")]
+    )
+    # when: 添付 summary を組み立てる
+    summary = build_attachment_summary(attachments)
+    # then: source path が表示され、どちらの添付か区別できる
+    assert "source: dir_a/report.pdf" in summary
+    assert "source: dir_b/report.pdf" in summary

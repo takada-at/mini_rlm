@@ -16,7 +16,7 @@ from mini_rlm.cli.convert import (
 )
 from mini_rlm.cli.data_model import ChatCLIConfig, RunCLIConfig
 from mini_rlm.repl_session import ReplExecutionRequest, execute_repl_session
-from mini_rlm.repl_setup import ReplSetupRequest
+from mini_rlm.repl_setup import ReplFileRef, ReplSetupRequest
 
 
 def _read_non_interactive_prompt() -> str | None:
@@ -78,7 +78,13 @@ def run_run_command(config: RunCLIConfig) -> int:
             setup=ReplSetupRequest(
                 request_context=request_context,
                 context_payload=build_run_context_payload(attachments),
-                file_paths=config.files,
+                files=[
+                    ReplFileRef(
+                        source_path=attachment.path,
+                        target_name=attachment.name,
+                    )
+                    for attachment in attachments
+                ],
                 functions=select_function_collection(config.mode, attachments),
             ),
             session_request_context=request_context,

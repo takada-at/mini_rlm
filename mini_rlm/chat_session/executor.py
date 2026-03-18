@@ -23,6 +23,7 @@ from mini_rlm.chat_session.data_model import (
 from mini_rlm.chat_session.reducer import reduce_chat_session
 from mini_rlm.custom_functions import (
     image_function_collection,
+    merge_function_collections,
     minimal_function_collection,
     pdf_function_collection,
 )
@@ -37,7 +38,7 @@ from mini_rlm.repl_session import (
     ReplSessionLimits,
     execute_repl_session,
 )
-from mini_rlm.repl_setup import ReplSetupRequest
+from mini_rlm.repl_setup import ReplFileRef, ReplSetupRequest
 
 
 def create_chat_session(
@@ -57,11 +58,10 @@ def create_chat_session(
 def add_attachment(state: ChatSessionState, file_path: Path) -> ChatSessionState:
     if not file_path.is_file():
         raise FileNotFoundError(f"File not found: {file_path}")
-    attachment = convert_paths_to_attachments([file_path])[0]
-    attachments = [
-        existing for existing in state.attachments if existing.path != attachment.path
-    ]
-    attachments.append(attachment)
+    attachment_paths = [attachment.path for attachment in state.attachments]
+    attachment_paths = [path for path in attachment_paths if path != file_path]
+    attachment_paths.append(file_path)
+    attachments = convert_paths_to_attachments(attachment_paths)
     return state.model_copy(update={"attachments": attachments})
 
 
@@ -120,14 +120,25 @@ def _resolve_selected_attachments(
         raise ValueError("pending_decision is required before running the agent.")
     if not decision.file_names:
         return []
-    by_name = {attachment.name: attachment for attachment in state.attachments}
+    by_name: dict[str, AttachmentRef] = {}
+    for attachment in state.attachments:
+        if attachment.name in by_name:
+            raise ValueError(f"Duplicate attachment name: {attachment.name}")
+        by_name[attachment.name] = attachment
     return [by_name[file_name] for file_name in decision.file_names]
 
 
 def _select_function_collection(attachments: list[AttachmentRef]):
-    if any(attachment.kind.value == "pdf" for attachment in attachments):
+    has_pdf = any(attachment.kind.value == "pdf" for attachment in attachments)
+    has_image = any(attachment.kind.value == "image" for attachment in attachments)
+    if has_pdf and has_image:
+        return merge_function_collections(
+            pdf_function_collection(),
+            image_function_collection(),
+        )
+    if has_pdf:
         return pdf_function_collection()
-    if any(attachment.kind.value == "image" for attachment in attachments):
+    if has_image:
         return image_function_collection()
     return minimal_function_collection()
 
@@ -144,7 +155,13 @@ def _execute_run_agent_command(state: ChatSessionState) -> CommandResult:
                 setup=ReplSetupRequest(
                     request_context=state.run_request_context,
                     context_payload=build_run_context_payload(selected_attachments),
-                    file_paths=[attachment.path for attachment in selected_attachments],
+                    files=[
+                        ReplFileRef(
+                            source_path=attachment.path,
+                            target_name=attachment.name,
+                        )
+                        for attachment in selected_attachments
+                    ],
                     functions=_select_function_collection(selected_attachments),
                 ),
                 limits=state.run_limits,
