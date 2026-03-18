@@ -83,6 +83,26 @@ export MINI_RLM_LLM_SUB_API_KEY="..."
 
 ## クイックスタート
 
+### ユーザー向け chat CLI を起動する
+
+```bash
+export MINI_RLM_LLM_ENDPOINT="https://your-host/v1/chat/completions"
+export MINI_RLM_LLM_API_KEY="..."
+export MINI_RLM_LLM_MODEL="gpt-4.1-mini"
+uv run mini-rlm chat --file /path/to/book.pdf
+```
+
+chat セッション中では `/help`, `/files`, `/add <path>`, `/run <prompt>`, `/exit` が使えます。
+
+### 単発の agent execution を実行する
+
+```bash
+export MINI_RLM_LLM_ENDPOINT="https://your-host/v1/chat/completions"
+export MINI_RLM_LLM_API_KEY="..."
+export MINI_RLM_LLM_MODEL="gpt-4.1-mini"
+uv run mini-rlm run --file /path/to/book.pdf --prompt "Find the page where Chapter 2 begins."
+```
+
 ### PDFの章を切り出す。
 
 ```bash

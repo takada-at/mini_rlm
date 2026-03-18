@@ -81,6 +81,26 @@ This implementation assumes an OpenAI-compatible endpoint that accepts `model` a
 
 ## Quick Start
 
+### Start the user-facing chat CLI
+
+```bash
+export MINI_RLM_LLM_ENDPOINT="https://your-host/v1/chat/completions"
+export MINI_RLM_LLM_API_KEY="..."
+export MINI_RLM_LLM_MODEL="gpt-4.1-mini"
+uv run mini-rlm chat --file /path/to/book.pdf
+```
+
+Inside the chat session, you can use `/help`, `/files`, `/add <path>`, `/run <prompt>`, and `/exit`.
+
+### Run a single agent execution
+
+```bash
+export MINI_RLM_LLM_ENDPOINT="https://your-host/v1/chat/completions"
+export MINI_RLM_LLM_API_KEY="..."
+export MINI_RLM_LLM_MODEL="gpt-4.1-mini"
+uv run mini-rlm run --file /path/to/book.pdf --prompt "Find the page where Chapter 2 begins."
+```
+
 ### Extract chapters from a PDF
 
 ```bash
