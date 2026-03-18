@@ -75,11 +75,33 @@ For PDF REPL sessions, you may also use configuration settings for submodels as 
 ```bash
 export MINI_RLM_LLM_SUB_ENDPOINT="https://your-host/v1/chat/completions"
 export MINI_RLM_LLM_SUB_API_KEY="..."
+export MINI_RLM_LLM_SUB_MODEL="gpt-4.1-mini"
 ```
+
+`MINI_RLM_LLM_MODEL` is used for the outer chat / RLM session. `MINI_RLM_LLM_SUB_MODEL` is used for subqueries executed through REPL helpers and recursive calls. If submodel settings are omitted, the main model settings are reused.
 
 This implementation assumes an OpenAI-compatible endpoint that accepts `model` and `messages` in a JSON body and processes them via `POST`.
 
 ## Quick Start
+
+### Start the user-facing chat CLI
+
+```bash
+export API_ENDPOINT="https://your-host/v1/chat/completions"
+export API_KEY="..."
+uv run mini-rlm chat --file /path/to/book.pdf
+```
+
+Inside the chat session, you can use `/help`, `/files`, `/add <path>`, `/run <prompt>`, and `/exit`.
+`mini-rlm chat` uses `openai/gpt-5.3-codex` as the main model and `qwen/qwen3.5-35b-a3b` as the submodel by default. You can override them with `--model` and `--sub_model`.
+
+### Run a single agent execution
+
+```bash
+export API_ENDPOINT="https://your-host/v1/chat/completions"
+export API_KEY="..."
+uv run mini-rlm run --file /path/to/book.pdf "Find the page where Chapter 2 begins."
+```
 
 ### Extract chapters from a PDF
 

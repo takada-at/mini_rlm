@@ -103,3 +103,17 @@ def filter_function_collection_for_runtime(
             if function.name != "rlm_query"
         ]
     )
+
+
+def merge_function_collections(
+    *function_collections: FunctionCollection,
+) -> FunctionCollection:
+    merged_functions: list[FunctionBase] = []
+    seen_names: set[str] = set()
+    for function_collection in function_collections:
+        for function in function_collection.functions:
+            if function.name in seen_names:
+                continue
+            seen_names.add(function.name)
+            merged_functions.append(function)
+    return FunctionCollection(functions=merged_functions)

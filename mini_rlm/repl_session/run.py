@@ -49,6 +49,7 @@ def execute_repl_session(request: ReplExecutionRequest) -> ReplSessionResult:
         setup_code=request.setup.setup_code,
         context_payload=request.setup.context_payload,
         file_pathes=request.setup.file_paths,
+        files=request.setup.files,
         functions=request.setup.functions,
         recursive_query_runtime=request.setup.recursive_query_runtime,
     )
