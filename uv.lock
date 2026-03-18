@@ -167,7 +167,7 @@ wheels = [
 [[package]]
 name = "mini-rlm"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "pillow" },
     { name = "pydantic" },
