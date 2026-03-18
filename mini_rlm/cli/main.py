@@ -1,10 +1,12 @@
 import argparse
 import sys
+from pathlib import Path
 
 from mini_rlm.cli.convert import (
     API_KEY_ENV,
     ENDPOINT_ENV,
-    MODEL_ENV,
+    MODEL,
+    SUB_MODEL,
     require_env,
     resolve_file_paths,
 )
@@ -18,20 +20,25 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
     chat_parser = subparsers.add_parser("chat", help="Start a chat session.")
     chat_parser.add_argument(
-        "--endpoint", help=f"LLM endpoint. Defaults to ${ENDPOINT_ENV}."
+        "--model",
+        default=MODEL,
+        help=f"Model name. Defaults to {MODEL}.",
     )
     chat_parser.add_argument(
-        "--api-key", help=f"LLM API key. Defaults to ${API_KEY_ENV}."
+        "--sub_model",
+        default=SUB_MODEL,
+        help=f"Sub-model name. Defaults to {SUB_MODEL}.",
     )
-    chat_parser.add_argument("--model", help=f"LLM model. Defaults to ${MODEL_ENV}.")
     chat_parser.add_argument(
         "--file",
         action="append",
         default=[],
+        type=Path,
         help="Attach a file to the chat session. Repeatable.",
     )
     chat_parser.add_argument(
-        "--prompt",
+        "prompt",
+        nargs="?",
         help="Optional initial prompt before entering interactive mode.",
     )
     chat_parser.add_argument(
@@ -42,20 +49,25 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
     run_parser = subparsers.add_parser("run", help="Run a single agent execution.")
     run_parser.add_argument(
-        "--endpoint", help=f"LLM endpoint. Defaults to ${ENDPOINT_ENV}."
+        "--model",
+        default=MODEL,
+        help=f"Model name. Defaults to {MODEL}.",
     )
     run_parser.add_argument(
-        "--api-key", help=f"LLM API key. Defaults to ${API_KEY_ENV}."
+        "--sub_model",
+        default=SUB_MODEL,
+        help=f"Sub-model name. Defaults to {SUB_MODEL}.",
     )
-    run_parser.add_argument("--model", help=f"LLM model. Defaults to ${MODEL_ENV}.")
     run_parser.add_argument(
         "--file",
         action="append",
         default=[],
+        type=Path,
         help="Attach a file to the run. Repeatable.",
     )
     run_parser.add_argument(
-        "--prompt",
+        "prompt",
+        nargs="?",
         help="Prompt for the single agent execution. If omitted, stdin is used.",
     )
     run_parser.add_argument(
@@ -74,9 +86,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
-    endpoint_url = require_env(ENDPOINT_ENV, args.endpoint)
-    api_key = require_env(API_KEY_ENV, args.api_key)
-    model = require_env(MODEL_ENV, args.model)
+    endpoint_url = require_env(ENDPOINT_ENV)
+    api_key = require_env(API_KEY_ENV)
     files = resolve_file_paths(args.file)
 
     if args.command == "chat":
@@ -84,7 +95,8 @@ def main(argv: list[str] | None = None) -> int:
             ChatCLIConfig(
                 endpoint_url=endpoint_url,
                 api_key=api_key,
-                model=model,
+                model=args.model,
+                sub_model=args.sub_model,
                 files=files,
                 initial_prompt=args.prompt,
                 verbose=args.verbose,
@@ -101,7 +113,8 @@ def main(argv: list[str] | None = None) -> int:
         RunCLIConfig(
             endpoint_url=endpoint_url,
             api_key=api_key,
-            model=model,
+            model=args.model,
+            sub_model=args.sub_model,
             files=files,
             prompt=prompt,
             mode=RunMode(args.mode),

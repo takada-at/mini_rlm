@@ -17,9 +17,10 @@ from mini_rlm.custom_functions import (
 )
 from mini_rlm.llm import RequestContext, create_request_context
 
-ENDPOINT_ENV = "MINI_RLM_LLM_ENDPOINT"
-API_KEY_ENV = "MINI_RLM_LLM_API_KEY"
-MODEL_ENV = "MINI_RLM_LLM_MODEL"
+ENDPOINT_ENV = "API_ENDPOINT"
+API_KEY_ENV = "API_KEY"
+MODEL = "openai/gpt-5.3-codex"
+SUB_MODEL = "qwen/qwen3.5-35b-a3b"
 
 
 def require_env(name: str, value: str | None = None) -> str:
@@ -31,10 +32,14 @@ def require_env(name: str, value: str | None = None) -> str:
     return resolved
 
 
-def resolve_file_paths(file_values: list[str] | None) -> list[Path]:
+def resolve_file_paths(file_values: list[str | Path] | None) -> list[Path]:
     resolved_paths: list[Path] = []
     for file_value in file_values or []:
-        path = Path(file_value).expanduser()
+        path = (
+            file_value.expanduser()
+            if isinstance(file_value, Path)
+            else Path(file_value).expanduser()
+        )
         if not path.is_file():
             raise FileNotFoundError(f"File not found: {path}")
         resolved_paths.append(path)

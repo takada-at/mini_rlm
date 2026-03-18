@@ -44,12 +44,15 @@ from mini_rlm.repl_setup import ReplFileRef, ReplSetupRequest
 def create_chat_session(
     chat_request_context: RequestContext,
     run_request_context: RequestContext | None = None,
+    sub_request_context: RequestContext | None = None,
     attachments: list[AttachmentRef] | None = None,
     run_limits: ReplSessionLimits | None = None,
 ) -> ChatSessionState:
+    resolved_run_request_context = run_request_context or chat_request_context
     return ChatSessionState(
         chat_request_context=chat_request_context,
-        run_request_context=run_request_context or chat_request_context,
+        run_request_context=resolved_run_request_context,
+        sub_request_context=sub_request_context or resolved_run_request_context,
         attachments=list(attachments or []),
         run_limits=run_limits,
     )
@@ -149,11 +152,12 @@ def _execute_run_agent_command(state: ChatSessionState) -> CommandResult:
         if decision is None:
             raise ValueError("pending_decision is required before running the agent.")
         selected_attachments = _resolve_selected_attachments(state)
+        sub_request_context = state.sub_request_context or state.run_request_context
         result = execute_repl_session(
             ReplExecutionRequest(
                 prompt=build_run_prompt(state, decision),
                 setup=ReplSetupRequest(
-                    request_context=state.run_request_context,
+                    request_context=sub_request_context,
                     context_payload=build_run_context_payload(selected_attachments),
                     files=[
                         ReplFileRef(

@@ -15,6 +15,7 @@ class CommonCLIConfig(BaseModel):
     endpoint_url: str
     api_key: str
     model: str
+    sub_model: str
     files: list[Path] = Field(default_factory=list)
     verbose: bool = False
 

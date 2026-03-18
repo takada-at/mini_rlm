@@ -72,6 +72,7 @@ class ChatSessionState(BaseModel):
 
     chat_request_context: RequestContext
     run_request_context: RequestContext
+    sub_request_context: RequestContext | None = None
     attachments: list[AttachmentRef] = Field(default_factory=list)
     turns: list[ChatTurn] = Field(default_factory=list)
     run_limits: ReplSessionLimits | None = None

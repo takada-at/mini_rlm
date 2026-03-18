@@ -35,13 +35,20 @@ def _print_run_summary(summary: RunSummary) -> None:
 
 def run_chat_command(config: ChatCLIConfig) -> int:
     attachments = convert_files_to_attachments(config.files)
-    request_context = build_request_context(
+    chat_request_context = build_request_context(
         endpoint_url=config.endpoint_url,
         api_key=config.api_key,
         model=config.model,
     )
+    sub_request_context = build_request_context(
+        endpoint_url=config.endpoint_url,
+        api_key=config.api_key,
+        model=config.sub_model,
+    )
     state = create_chat_session(
-        chat_request_context=request_context,
+        chat_request_context=chat_request_context,
+        run_request_context=chat_request_context,
+        sub_request_context=sub_request_context,
         attachments=attachments,
     )
     initial_prompt = config.initial_prompt or _read_non_interactive_prompt()
@@ -67,16 +74,21 @@ def run_chat_command(config: ChatCLIConfig) -> int:
 
 def run_run_command(config: RunCLIConfig) -> int:
     attachments = convert_files_to_attachments(config.files)
-    request_context = build_request_context(
+    main_request_context = build_request_context(
         endpoint_url=config.endpoint_url,
         api_key=config.api_key,
         model=config.model,
+    )
+    sub_request_context = build_request_context(
+        endpoint_url=config.endpoint_url,
+        api_key=config.api_key,
+        model=config.sub_model,
     )
     result = execute_repl_session(
         ReplExecutionRequest(
             prompt=build_run_prompt(config.prompt, attachments),
             setup=ReplSetupRequest(
-                request_context=request_context,
+                request_context=sub_request_context,
                 context_payload=build_run_context_payload(attachments),
                 files=[
                     ReplFileRef(
@@ -87,7 +99,7 @@ def run_run_command(config: RunCLIConfig) -> int:
                 ],
                 functions=select_function_collection(config.mode, attachments),
             ),
-            session_request_context=request_context,
+            session_request_context=main_request_context,
         )
     )
     summary = RunSummary(
