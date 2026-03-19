@@ -1,3 +1,4 @@
+import ast
 import re
 
 from mini_rlm.repl import ReplResult, execute_code
@@ -57,7 +58,14 @@ def find_final_answer(text: str, repl_state=None) -> str | None:
     final_pattern = r"^\s*FINAL\((.*)\)\s*$"
     match = re.search(final_pattern, text, re.MULTILINE | re.DOTALL)
     if match:
-        return match.group(1).strip()
+        raw_answer = match.group(1).strip()
+        try:
+            parsed = ast.literal_eval(raw_answer)
+        except (SyntaxError, ValueError):
+            return raw_answer
+        if isinstance(parsed, str):
+            return parsed
+        return raw_answer
 
     return None
 

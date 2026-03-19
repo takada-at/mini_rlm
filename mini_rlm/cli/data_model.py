@@ -11,6 +11,17 @@ class RunMode(StrEnum):
     PDF = "pdf"
 
 
+class ChatCLIInputType(StrEnum):
+    EMPTY = "empty"
+    EXIT = "exit"
+    HELP = "help"
+    FILES = "files"
+    ADD_FILE = "add_file"
+    RESET = "reset"
+    SEND_MESSAGE = "send_message"
+    INVALID = "invalid"
+
+
 class CommonCLIConfig(BaseModel):
     endpoint_url: str
     api_key: str
@@ -22,6 +33,14 @@ class CommonCLIConfig(BaseModel):
 
 class ChatCLIConfig(CommonCLIConfig):
     initial_prompt: str | None = None
+
+
+class ChatCLIInput(BaseModel):
+    type: ChatCLIInputType
+    message: str | None = None
+    file_path: Path | None = None
+    force_run: bool = False
+    error_message: str | None = None
 
 
 class RunCLIConfig(CommonCLIConfig):
