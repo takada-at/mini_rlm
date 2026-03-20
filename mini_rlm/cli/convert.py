@@ -8,7 +8,7 @@ from mini_rlm.chat_session import (
     build_attachment_summary,
     convert_paths_to_attachments,
 )
-from mini_rlm.cli.data_model import RunMode
+from mini_rlm.cli.data_model import ChatCLIInput, ChatCLIInputType, RunMode
 from mini_rlm.custom_functions import (
     image_function_collection,
     merge_function_collections,
@@ -44,6 +44,79 @@ def resolve_file_paths(file_values: list[str | Path] | None) -> list[Path]:
             raise FileNotFoundError(f"File not found: {path}")
         resolved_paths.append(path)
     return resolved_paths
+
+
+def _normalize_chat_file_path(file_path_text: str) -> Path:
+    normalized_text = file_path_text.strip()
+    if normalized_text == "":
+        raise ValueError("Usage: /add <path>")
+    if (
+        len(normalized_text) >= 2
+        and normalized_text[0] == normalized_text[-1]
+        and normalized_text[0] in {"'", '"'}
+    ):
+        normalized_text = normalized_text[1:-1].strip()
+    if normalized_text == "":
+        raise ValueError("Usage: /add <path>")
+    return Path(normalized_text).expanduser()
+
+
+def parse_chat_input(user_text: str) -> ChatCLIInput:
+    stripped_user_text = user_text.strip()
+    if stripped_user_text == "":
+        return ChatCLIInput(type=ChatCLIInputType.EMPTY)
+    if stripped_user_text == "/exit":
+        return ChatCLIInput(type=ChatCLIInputType.EXIT)
+    if stripped_user_text == "/help":
+        return ChatCLIInput(type=ChatCLIInputType.HELP)
+    if stripped_user_text == "/files":
+        return ChatCLIInput(type=ChatCLIInputType.FILES)
+    if stripped_user_text == "/reset":
+        return ChatCLIInput(type=ChatCLIInputType.RESET)
+    if stripped_user_text == "/add":
+        return ChatCLIInput(
+            type=ChatCLIInputType.INVALID,
+            error_message="Usage: /add <path>",
+        )
+    if stripped_user_text.startswith("/add "):
+        file_path = stripped_user_text[5:].strip()
+        if file_path == "":
+            return ChatCLIInput(
+                type=ChatCLIInputType.INVALID,
+                error_message="Usage: /add <path>",
+            )
+        try:
+            normalized_file_path = _normalize_chat_file_path(file_path)
+        except ValueError as error:
+            return ChatCLIInput(
+                type=ChatCLIInputType.INVALID,
+                error_message=str(error),
+            )
+        return ChatCLIInput(
+            type=ChatCLIInputType.ADD_FILE,
+            file_path=normalized_file_path,
+        )
+    if stripped_user_text == "/run":
+        return ChatCLIInput(
+            type=ChatCLIInputType.INVALID,
+            error_message="Usage: /run <prompt>",
+        )
+    if stripped_user_text.startswith("/run "):
+        message = stripped_user_text[5:].strip()
+        if message == "":
+            return ChatCLIInput(
+                type=ChatCLIInputType.INVALID,
+                error_message="Usage: /run <prompt>",
+            )
+        return ChatCLIInput(
+            type=ChatCLIInputType.SEND_MESSAGE,
+            message=message,
+            force_run=True,
+        )
+    return ChatCLIInput(
+        type=ChatCLIInputType.SEND_MESSAGE,
+        message=stripped_user_text,
+    )
 
 
 def build_request_context(

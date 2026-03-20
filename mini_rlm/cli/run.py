@@ -1,5 +1,7 @@
 import sys
 
+from rich.console import Console
+
 from mini_rlm.chat_session import (
     RunSummary,
     build_run_context_payload,
@@ -7,6 +9,7 @@ from mini_rlm.chat_session import (
     execute_chat_turn,
     run_chat_session,
 )
+from mini_rlm.cli.chat import execute_rich_chat_turn, run_rich_chat_session
 from mini_rlm.cli.convert import (
     build_request_context,
     build_run_prompt,
@@ -51,24 +54,38 @@ def run_chat_command(config: ChatCLIConfig) -> int:
         sub_request_context=sub_request_context,
         attachments=attachments,
     )
+    use_rich_chat = sys.stdin.isatty() and sys.stdout.isatty()
+    console = Console() if use_rich_chat else None
     initial_prompt = config.initial_prompt or _read_non_interactive_prompt()
     if initial_prompt is not None:
-        turn_result = execute_chat_turn(
-            state,
-            initial_prompt,
-            on_run_start=print,
-        )
+        if use_rich_chat and console is not None:
+            turn_result = execute_rich_chat_turn(
+                console,
+                state,
+                initial_prompt,
+                verbose=config.verbose,
+            )
+        else:
+            turn_result = execute_chat_turn(
+                state,
+                initial_prompt,
+                on_run_start=print,
+            )
         state = turn_result.state
-        turn = turn_result.turn
-        if config.verbose and turn.run_summary is not None:
-            _print_run_summary(turn.run_summary)
-        print(turn.assistant_text)
+        if not use_rich_chat:
+            turn = turn_result.turn
+            if config.verbose and turn.run_summary is not None:
+                _print_run_summary(turn.run_summary)
+            print(turn.assistant_text)
         if not sys.stdin.isatty():
             return 0
 
-    if sys.stdin.isatty():
-        print("Type /help for commands.")
-    run_chat_session(state, verbose=config.verbose)
+    if use_rich_chat and console is not None:
+        run_rich_chat_session(state, verbose=config.verbose, console=console)
+    else:
+        if sys.stdin.isatty():
+            print("Type /help for commands.")
+        run_chat_session(state, verbose=config.verbose)
     return 0
 
 

@@ -11,7 +11,48 @@ PDF と画像を扱える Recursive Language Model (RLM) の実装です。
 - PDF のページを画像化またはテキスト抽出して扱う
 - 一時ディレクトリ付きの永続 REPL で複数ターンのコード実行を継続する
 - `rlm_query()` による子 REPL の再帰実行でサブ問題を切り出す
-- reducer + executor パターンで状態遷移と副作用を分離する
+
+## セットアップ
+
+前提:
+
+- Python 3.12+
+- `uv`
+
+依存関係をインストールします。
+
+```bash
+uv sync --dev
+```
+
+## クイックスタート
+
+### ユーザー向け chat CLI を起動する
+
+```bash
+export API_ENDPOINT="https://your-host/v1/chat/completions"
+export API_KEY="..."
+uv run mini-rlm chat --file /path/to/book.pdf
+```
+
+chat セッション中では `/help`, `/files`, `/add <path>`, `/run <prompt>`, `/exit` が使えます。
+`mini-rlm chat` は既定で main model に `openai/gpt-5.3-codex`、sub model に `qwen/qwen3.5-35b-a3b` を使います。必要なら `--model` と `--sub_model` で上書きできます。
+
+### 単発の agent execution を実行する
+
+```bash
+export API_ENDPOINT="https://your-host/v1/chat/completions"
+export API_KEY="..."
+uv run mini-rlm run --file /path/to/book.pdf "Find the page where Chapter 2 begins."
+```
+
+### PDFの章を切り出す。
+
+```bash
+export API_ENDPOINT="https://your-host/v1/chat/completions"
+export API_KEY="..."
+uv run python scripts/pdf_chapter_split.py <pdf_path> <chapter number(1-index)>
+```
 
 ## 全体像
 
@@ -48,76 +89,6 @@ REPL には用途別の関数コレクションを渡せます。
 - テスト対象は主に「複雑なロジックを持つが副作用のない部分」に限定する
 
 `repl_session` と `llm` は reducer パターンで実装されています。
-
-## セットアップ
-
-前提:
-
-- Python 3.12+
-- `uv`
-
-依存関係をインストールします。
-
-```bash
-uv sync --dev
-```
-
-## 環境変数
-
-手動実行スクリプトでは次の環境変数を使います。
-
-```bash
-export MINI_RLM_LLM_ENDPOINT="https://your-host/v1/chat/completions"
-export MINI_RLM_LLM_API_KEY="..."
-export MINI_RLM_LLM_MODEL="gpt-4.1-mini"
-```
-
-PDF 用の REPL セッションでは、必要に応じてサブモデル用の設定も使えます。
-
-```bash
-export MINI_RLM_LLM_SUB_ENDPOINT="https://your-host/v1/chat/completions"
-export MINI_RLM_LLM_SUB_API_KEY="..."
-export MINI_RLM_LLM_SUB_MODEL="gpt-4.1-mini"
-```
-
-`MINI_RLM_LLM_MODEL` は outer の chat / RLM セッションに使われ、`MINI_RLM_LLM_SUB_MODEL` は REPL helper や再帰呼び出し経由のサブクエリに使われます。sub 側を省略した場合は main 側の設定を再利用します。
-
-この実装は、`model` と `messages` を JSON body に入れて `POST` する OpenAI 互換 endpoint を想定しています。
-
-## クイックスタート
-
-### ユーザー向け chat CLI を起動する
-
-```bash
-export API_ENDPOINT="https://your-host/v1/chat/completions"
-export API_KEY="..."
-uv run mini-rlm chat --file /path/to/book.pdf
-```
-
-chat セッション中では `/help`, `/files`, `/add <path>`, `/run <prompt>`, `/exit` が使えます。
-`mini-rlm chat` は既定で main model に `openai/gpt-5.3-codex`、sub model に `qwen/qwen3.5-35b-a3b` を使います。必要なら `--model` と `--sub_model` で上書きできます。
-
-### 単発の agent execution を実行する
-
-```bash
-export API_ENDPOINT="https://your-host/v1/chat/completions"
-export API_KEY="..."
-uv run mini-rlm run --file /path/to/book.pdf "Find the page where Chapter 2 begins."
-```
-
-### PDFの章を切り出す。
-
-```bash
-export API_ENDPOINT="https://your-host/v1/chat/completions"
-export API_KEY="..."
-uv run python scripts/pdf_chapter_split.py <pdf_path> <chapter number(1-index)>
-```
-
-### 画像付き REPL セッションを動かす
-
-```bash
-uv run python manual_tests/repl_describe_image.py
-```
 
 ## ライブラリとして使う
 
@@ -174,24 +145,3 @@ make test
 - テストはドメイン単位で `tests/<domain>/` に置く
 - ふるまいベースで `give / when / then` コメントをつける
 - 副作用がシンプルなコードや単純なグルーコードには、むやみに単体テストを増やさない
-
-## ディレクトリ例
-
-```text
-mini_rlm/
-  image/
-    data_model.py
-    convert.py
-  pdf/
-    data_model.py
-    convert.py
-  repl/
-  repl_session/
-  recursive_query/
-  llm/
-tests/
-  image/
-  pdf/
-  repl/
-  repl_session/
-```

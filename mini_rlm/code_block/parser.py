@@ -57,7 +57,12 @@ def find_final_answer(text: str, repl_state=None) -> str | None:
     final_pattern = r"^\s*FINAL\((.*)\)\s*$"
     match = re.search(final_pattern, text, re.MULTILINE | re.DOTALL)
     if match:
-        return match.group(1).strip()
+        raw_answer = match.group(1).strip()
+        if repl_state is not None:
+            result = execute_code(repl_state, f"FINAL({raw_answer})")
+            if result.final_answer is not None:
+                return result.final_answer
+        return raw_answer
 
     return None
 
