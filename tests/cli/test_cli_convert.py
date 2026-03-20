@@ -16,7 +16,7 @@ def test_resolve_run_mode_keeps_auto_for_mixed_pdf_and_image_attachments() -> No
 
     # give: PDF と画像が両方添付されている
     attachments = convert_paths_to_attachments([Path("book.pdf"), Path("diagram.png")])
-    # when: auto mode を解決する
+    # when: resolve_run_modeでモードを解決する
     mode = resolve_run_mode(RunMode.AUTO, attachments)
     # then: mixed attachments のまま扱えるよう AUTO のまま残る
     assert mode == RunMode.AUTO

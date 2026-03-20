@@ -1,6 +1,5 @@
 from rich import box
 from rich.console import Console
-from rich.markdown import Markdown
 from rich.panel import Panel
 from rich.prompt import Prompt
 from rich.table import Table
@@ -76,7 +75,7 @@ def _render_run_summary(console: Console, summary: RunSummary) -> None:
 
 
 def _render_assistant_message(console: Console, message: str) -> None:
-    renderable = Markdown(message) if message.strip() != "" else Text("")
+    renderable = Text(message) if message.strip() != "" else Text("")
     console.print(
         Panel(
             renderable,

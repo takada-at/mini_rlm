@@ -1,4 +1,3 @@
-import ast
 import re
 
 from mini_rlm.repl import ReplResult, execute_code
@@ -59,12 +58,10 @@ def find_final_answer(text: str, repl_state=None) -> str | None:
     match = re.search(final_pattern, text, re.MULTILINE | re.DOTALL)
     if match:
         raw_answer = match.group(1).strip()
-        try:
-            parsed = ast.literal_eval(raw_answer)
-        except (SyntaxError, ValueError):
-            return raw_answer
-        if isinstance(parsed, str):
-            return parsed
+        if repl_state is not None:
+            result = execute_code(repl_state, f"FINAL({raw_answer})")
+            if result.final_answer is not None:
+                return result.final_answer
         return raw_answer
 
     return None
