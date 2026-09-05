@@ -3,7 +3,7 @@ from typing import List
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from mini_rlm.llm import MessageContent, ModelTokenUsage, RequestContext
+from mini_rlm.llm import HistoryItem, ModelTokenUsage, RequestContext
 from mini_rlm.repl import ReplResult
 from mini_rlm.repl_setup import ReplSetupRequest
 
@@ -72,10 +72,12 @@ class CommandResult(BaseModel):
     consumed_tokens: int = 0
     model_token_usages: list[ModelTokenUsage] = Field(default_factory=list)
     last_llm_message: str | None = None
+    last_llm_items: list[HistoryItem] = Field(default_factory=list)
     repl_results: List[ReplSessionHistoryEntry] | None = None
     is_complete: bool | None = None
-    new_messages: List[MessageContent] | None = None
-    compacted_messages: List[MessageContent] | None = None
+    new_messages: List[HistoryItem] | None = None
+    compacted_messages: List[HistoryItem] | None = None
+    history_includes_prompt: bool = False
     final_answer: str | None = None
     error_message: str | None = None
 
@@ -94,10 +96,12 @@ class ReplSessionState(BaseModel):
     is_complete: bool = False
     is_cancelled: bool = False
     last_llm_message: str | None = None
+    last_llm_items: list[HistoryItem] = Field(default_factory=list)
     repl_results: List[ReplSessionHistoryEntry] | None = None
     last_command_type: ReplSessionCommandType | None = None
     termination_reason: TerminationReason | None = None
-    messages: List[MessageContent] | None = None
+    messages: List[HistoryItem] | None = None
+    history_includes_prompt: bool = False
     ended_at_seconds: float | None = None
 
     repl_history: List[ReplSessionHistoryEntry] | None = None

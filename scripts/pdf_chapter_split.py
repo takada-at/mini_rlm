@@ -37,7 +37,7 @@ Answer in the following format:
 <start_page_number>,<end_page_number>
 """
 
-MODEL = "openai/gpt-5.3-codex"
+MODEL = "openai/gpt-5.4"
 SUB_MODEL = "qwen/qwen3.5-35b-a3b"
 START_PAGE_PATTERN = re.compile(
     r"\bstart(?:s|ing)?(?:[\s_-]*page(?:[\s_-]*number)?)?\b[^\d-]{0,40}(-?\d+)",

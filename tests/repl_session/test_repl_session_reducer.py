@@ -171,6 +171,9 @@ def test_append_history_update_messages() -> None:
     # then: messagesが更新される
     assert next_state.messages is not None
     assert len(next_state.messages) == 3
+    assert isinstance(next_state.messages[0], MessageContent)
+    assert isinstance(next_state.messages[1], MessageContent)
+    assert isinstance(next_state.messages[2], MessageContent)
     assert next_state.messages[0].content == "start"
     assert next_state.messages[1].content == "print('hello')"
     assert next_state.messages[2].content == "print('world')"

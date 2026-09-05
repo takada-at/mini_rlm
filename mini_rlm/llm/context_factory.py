@@ -2,7 +2,7 @@ from typing import Any, Dict, Optional
 
 from requests import Session
 
-from mini_rlm.llm.data_model import Endpoint, RequestContext
+from mini_rlm.llm.data_model import APIType, Endpoint, RequestContext
 
 
 def create_request_context(
@@ -10,6 +10,8 @@ def create_request_context(
     model: str,
     api_key: Optional[str] = None,
     request_params: Optional[Dict[str, Any]] = None,
+    *,
+    api_type: APIType = "chat_completions",
 ) -> RequestContext:
     session = Session()
     headers = {
@@ -23,4 +25,6 @@ def create_request_context(
     }
     if request_params:
         kwargs.update(request_params)
-    return RequestContext(session=session, endpoint=endpoint, kwargs=kwargs)
+    return RequestContext(
+        session=session, endpoint=endpoint, kwargs=kwargs, api_type=api_type
+    )

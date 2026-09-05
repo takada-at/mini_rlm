@@ -42,11 +42,13 @@ def run_chat_command(config: ChatCLIConfig) -> int:
         endpoint_url=config.endpoint_url,
         api_key=config.api_key,
         model=config.model,
+        api_type=config.api_type,
     )
     sub_request_context = build_request_context(
         endpoint_url=config.endpoint_url,
         api_key=config.api_key,
         model=config.sub_model,
+        api_type=config.api_type,
     )
     state = create_chat_session(
         chat_request_context=chat_request_context,
@@ -95,11 +97,13 @@ def run_run_command(config: RunCLIConfig) -> int:
         endpoint_url=config.endpoint_url,
         api_key=config.api_key,
         model=config.model,
+        api_type=config.api_type,
     )
     sub_request_context = build_request_context(
         endpoint_url=config.endpoint_url,
         api_key=config.api_key,
         model=config.sub_model,
+        api_type=config.api_type,
     )
     result = execute_repl_session(
         ReplExecutionRequest(

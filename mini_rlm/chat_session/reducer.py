@@ -1,3 +1,4 @@
+from mini_rlm.chat_session.convert import build_chat_history
 from mini_rlm.chat_session.data_model import (
     ChatDecisionType,
     ChatSessionCommand,
@@ -8,7 +9,7 @@ from mini_rlm.chat_session.data_model import (
     ChatTurn,
     CommandResult,
 )
-from mini_rlm.llm import merge_model_token_usages
+from mini_rlm.llm import MessageContent, merge_model_token_usages
 
 
 def _with_command(
@@ -20,6 +21,13 @@ def _with_command(
 
 
 def _apply_result(state: ChatSessionState, result: CommandResult) -> ChatSessionState:
+    if state.chat_request_context.api_type == "responses" and result.new_history:
+        state = state.model_copy(
+            update={
+                "api_history": build_chat_history(state) + result.new_history,
+                "pending_input_recorded": True,
+            }
+        )
     return state.model_copy(
         update={
             "total_tokens": state.total_tokens + result.consumed_tokens,
@@ -48,6 +56,26 @@ def _append_turn(
         else ChatDecisionType.RESPOND_CHAT
     )
     reason = pending_decision.reason if pending_decision is not None else None
+    if state.chat_request_context.api_type == "responses":
+        history = build_chat_history(state)
+        if not state.pending_input_recorded:
+            history.append(MessageContent(role="user", content=pending_user_text))
+        if (
+            result is None
+            or result.type == ChatSessionResultType.ERROR
+            or result.command_type == ChatSessionCommandType.RUN_AGENT
+            or result.decision is None
+        ):
+            label = (
+                "Agent execution result"
+                if result is not None
+                and result.command_type == ChatSessionCommandType.RUN_AGENT
+                else "Chat turn error"
+            )
+            history.append(
+                MessageContent(role="user", content=f"{label}:\n{assistant_text}")
+            )
+        state = state.model_copy(update={"api_history": history})
     next_turn = ChatTurn(
         user_text=pending_user_text,
         assistant_text=assistant_text,
@@ -61,6 +89,7 @@ def _append_turn(
             "status": ChatSessionStatus.IDLE,
             "pending_user_text": None,
             "pending_decision": None,
+            "pending_input_recorded": False,
             "turns": state.turns + [next_turn],
         }
     )

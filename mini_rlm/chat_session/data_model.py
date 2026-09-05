@@ -3,7 +3,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from mini_rlm.llm import ModelTokenUsage, RequestContext
+from mini_rlm.llm import HistoryItem, ModelTokenUsage, RequestContext
 from mini_rlm.repl_session import ReplSessionLimits
 
 
@@ -75,6 +75,8 @@ class ChatSessionState(BaseModel):
     sub_request_context: RequestContext | None = None
     attachments: list[AttachmentRef] = Field(default_factory=list)
     turns: list[ChatTurn] = Field(default_factory=list)
+    api_history: list[HistoryItem] | None = None
+    pending_input_recorded: bool = False
     run_limits: ReplSessionLimits | None = None
     status: ChatSessionStatus = ChatSessionStatus.IDLE
     pending_user_text: str | None = None
@@ -92,6 +94,7 @@ class CommandResult(BaseModel):
     command_type: ChatSessionCommandType
     type: ChatSessionResultType
     decision: ChatDecision | None = None
+    new_history: list[HistoryItem] = Field(default_factory=list)
     assistant_text: str | None = None
     run_summary: RunSummary | None = None
     consumed_tokens: int = 0

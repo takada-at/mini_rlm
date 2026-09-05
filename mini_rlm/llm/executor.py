@@ -3,18 +3,17 @@ from collections.abc import Callable
 from typing import Any
 
 import requests
-from pydantic import ValidationError
 
 from mini_rlm.debug_logger import get_logger
 from mini_rlm.llm.data_model import (
     CommandResult,
-    MessageContent,
     RequestCommand,
     RequestCommandType,
     RequestPayload,
     RequestResultType,
     RequestState,
 )
+from mini_rlm.llm.protocol import parse_response
 from mini_rlm.llm.reducer import reduce_request
 
 
@@ -35,28 +34,19 @@ def _run_request_command(
 
     try:
         response_json = send_request(command.payload)
-        if (
-            "choices" not in response_json
-            or not isinstance(response_json["choices"], list)
-            or len(response_json["choices"]) == 0
-        ):
-            return CommandResult(
-                type=RequestResultType.INVALID_RESPONSE,
-                error_message="response JSON does not contain 'choices'",
-            )
         try:
-            message = MessageContent.model_validate(
-                response_json["choices"][0]["message"]
+            parsed = parse_response(
+                response_json, command.payload.api_type, command.payload.operation
             )
-        except ValidationError as error:
-            logger.warning(f"Failed to parse message content from response: {error}")
-            message = None
+        except (ValueError, TypeError) as error:
             return CommandResult(
-                type=RequestResultType.INVALID_RESPONSE,
-                error_message=f"response JSON 'choices' has invalid format: {error}",
+                type=RequestResultType.INVALID_RESPONSE, error_message=str(error)
             )
         return CommandResult(
-            type=RequestResultType.SUCCESS, response_json=response_json, message=message
+            type=RequestResultType.SUCCESS,
+            response_json=response_json,
+            message=parsed.messages[0] if parsed.messages else None,
+            parsed_response=parsed,
         )
     except requests.Timeout as error:
         logger.warning(f"Request timed out: {error}")

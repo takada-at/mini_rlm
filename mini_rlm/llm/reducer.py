@@ -62,6 +62,7 @@ def reduce_request(
                 "status": RequestStatus.SUCCEEDED,
                 "response_json": prev_command_result.response_json,
                 "message": prev_command_result.message,
+                "parsed_response": prev_command_result.parsed_response,
                 "last_error_type": None,
                 "last_error_message": None,
             }

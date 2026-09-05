@@ -22,6 +22,24 @@ class MessageContent(BaseModel):
     name: str | None = None
 
 
+class ResponseItem(BaseModel):
+    """An opaque Responses item; preserve all API fields when replaying it."""
+
+    model_config = ConfigDict(extra="allow")
+
+    type: str
+
+
+type HistoryItem = MessageContent | ResponseItem
+type APIType = Literal["chat_completions", "responses"]
+type RequestOperation = Literal["create", "compact"]
+
+
+class ParsedResponse(BaseModel):
+    messages: list[MessageContent] = Field(default_factory=list)
+    output_items: list[ResponseItem] = Field(default_factory=list)
+
+
 class Endpoint(BaseModel):
     url: str
     method: str = "GET"
@@ -34,6 +52,7 @@ class RequestContext(BaseModel):
 
     session: Session
     endpoint: Endpoint
+    api_type: APIType = "chat_completions"
     kwargs: Dict[str, Any] | None = None
     messages: List[MessageContent] | None = None
 
@@ -85,6 +104,8 @@ class RequestPayload(BaseModel):
     headers: Dict[str, str]
     body: Dict[str, Any]
     timeout_seconds: float
+    api_type: APIType = "chat_completions"
+    operation: RequestOperation = "create"
 
 
 class RequestState(BaseModel):
@@ -97,6 +118,7 @@ class RequestState(BaseModel):
     last_error_message: str | None = None
     response_json: Dict[str, Any] | None = None
     message: MessageContent | None = None
+    parsed_response: ParsedResponse | None = None
 
 
 class RequestCommand(BaseModel):
@@ -110,6 +132,7 @@ class CommandResult(BaseModel):
     status_code: int | None = None
     response_json: Dict[str, Any] | None = None
     message: MessageContent | None = None
+    parsed_response: ParsedResponse | None = None
     error_message: str | None = None
 
 
@@ -117,3 +140,4 @@ class APIRequestResult(BaseModel):
     response_json: Dict[str, Any]
     messages: List[MessageContent]
     resolved_model_name: str | None = None
+    output_items: list[ResponseItem] = Field(default_factory=list)

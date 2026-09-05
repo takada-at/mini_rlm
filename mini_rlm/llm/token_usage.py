@@ -12,8 +12,8 @@ def get_detailed_token_usage_from_response(response: APIRequestResult) -> TokenU
     if "usage" in response_json and isinstance(response_json["usage"], dict):
         usage = response_json["usage"]
         total_tokens = usage.get("total_tokens")
-        prompt_tokens = usage.get("prompt_tokens")
-        completion_tokens = usage.get("completion_tokens")
+        prompt_tokens = usage.get("input_tokens", usage.get("prompt_tokens"))
+        completion_tokens = usage.get("output_tokens", usage.get("completion_tokens"))
         model_name = response.resolved_model_name
 
         token_usage = TokenUsage()

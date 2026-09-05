@@ -3,12 +3,15 @@ from mini_rlm.llm.context_factory import create_request_context
 from mini_rlm.llm.convert import convert_messages_str
 from mini_rlm.llm.data_model import (
     APIRequestResult,
+    APIType,
     Endpoint,
+    HistoryItem,
     ImageURL,
     MessageContent,
     MessageContentPart,
     ModelTokenUsage,
     RequestContext,
+    ResponseItem,
     TokenUsage,
 )
 from mini_rlm.llm.message_factory import create_message_content
@@ -41,6 +44,9 @@ __all__ = [
     "text_query",
     "text_query_with_usage",
     "APIRequestResult",
+    "APIType",
+    "HistoryItem",
+    "ResponseItem",
     "Endpoint",
     "ImageURL",
     "MessageContent",

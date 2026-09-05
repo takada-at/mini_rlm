@@ -98,6 +98,7 @@ def _next_command_after_success(
         new_state = new_state.model_copy(
             update={
                 "last_llm_message": prev_command_result.last_llm_message,
+                "last_llm_items": prev_command_result.last_llm_items,
                 "repl_results": None,
             }
         )
@@ -149,6 +150,7 @@ def _next_command_after_success(
         new_state = new_state.model_copy(
             update={
                 "messages": prev_command_result.compacted_messages,
+                "history_includes_prompt": prev_command_result.history_includes_prompt,
                 "current_history_tokens": 0,
             }
         )

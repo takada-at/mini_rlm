@@ -81,6 +81,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="Reserved for future detailed output.",
     )
+    for command_parser in (chat_parser, run_parser):
+        command_parser.add_argument(
+            "--api-type",
+            choices=["chat_completions", "responses"],
+            default="chat_completions",
+            help="API protocol for the configured API_ENDPOINT (default: chat_completions).",
+        )
     return parser.parse_args(argv)
 
 
@@ -97,6 +104,7 @@ def main(argv: list[str] | None = None) -> int:
                 api_key=api_key,
                 model=args.model,
                 sub_model=args.sub_model,
+                api_type=args.api_type,
                 files=files,
                 initial_prompt=args.prompt,
                 verbose=args.verbose,
@@ -115,6 +123,7 @@ def main(argv: list[str] | None = None) -> int:
             api_key=api_key,
             model=args.model,
             sub_model=args.sub_model,
+            api_type=args.api_type,
             files=files,
             prompt=prompt,
             mode=RunMode(args.mode),

@@ -45,7 +45,10 @@ def _response_to_text_and_usage(response: APIRequestResult) -> tuple[str, TokenU
     if response_messages:
         return (
             remove_think_tag_contents(
-                message_content_to_text(response_messages[0].content)
+                "".join(
+                    message_content_to_text(message.content)
+                    for message in response_messages
+                )
             ),
             token_usage,
         )

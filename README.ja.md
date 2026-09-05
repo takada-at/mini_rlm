@@ -145,3 +145,40 @@ make test
 - テストはドメイン単位で `tests/<domain>/` に置く
 - ふるまいベースで `give / when / then` コメントをつける
 - 副作用がシンプルなコードや単純なグルーコードには、むやみに単体テストを増やさない
+
+## Responses APIと推論履歴
+
+既定のAPIはChat Completionsです。Responses APIを使う場合は、完全なエンドポイントURLを設定し、`chat` / `run` に `--api-type responses` を指定します。
+
+```bash
+export API_ENDPOINT="https://api.openai.com/v1/responses"
+# API_KEYは既存の環境変数から読み込みます。
+uv run mini-rlm chat --api-type responses --model "$MODEL" --sub_model "$SUB_MODEL"
+uv run mini-rlm run --api-type responses --model "$MODEL" --sub_model "$SUB_MODEL" "添付ファイルを調べて"
+```
+
+`MODEL` と `SUB_MODEL` には、指定したエンドポイントで利用できるResponses対応モデルを設定してください。既定のモデル名は変更していません。CLIでは両モデルに同じAPI種別を適用します。履歴圧縮が発生する場合、メインのRLMモデルには `/responses/compact` 対応も必要です。
+
+Pythonからは各contextでAPI種別と推論設定を指定できます。
+
+```python
+import os
+from mini_rlm.llm import create_request_context
+
+context = create_request_context(
+    endpoint_url="https://api.openai.com/v1/responses",
+    model=os.environ["MODEL"],
+    api_key=os.environ["API_KEY"],
+    api_type="responses",
+    # reasoning.context対応モデル・エンドポイントでのみ指定します。
+    request_params={"reasoning": {"effort": "medium", "context": "all_turns"}},
+)
+```
+
+Responsesでは `store=false` と `include=["reasoning.encrypted_content"]` を指定します。暗号化された推論やメッセージの付加情報を含む応答項目を、同一RLM実行内の反復とチャットの次ターンへ順序どおり再送します。表示・コード抽出には推論を含めません。Pythonで独自に履歴を管理する場合は、`make_api_request` の返す `result.output_items` を追加し、その後に次のユーザーメッセージを追加してください。`result.messages` は表示用のassistant本文だけを持ちます。
+
+履歴は共有contextではなく各セッションが所有します。独立したRLM実行やサブクエリの間では推論を共有せず、エージェント実行後は結果を明示したメッセージをチャットモデルへ渡します。`/reset` は推論を含むチャット履歴を消去します。ディスク永続化とチャットの自動圧縮は行いません。
+
+RLMの履歴圧縮には `/responses/compact` を使い、暗号化された圧縮項目を含む出力全体を次回へ渡します。圧縮失敗時は現在の履歴を保持し、既存の再試行・エラー上限の処理に従います。Chat Completionsでは従来の文章要約を維持します。ストリーミング、バックグラウンド応答、サーバー側の会話ID、新たなAPIツール実行方式には対応していません。
+
+仕様は公式の[推論ガイド](https://developers.openai.com/api/docs/guides/reasoning)と[compact APIリファレンス](https://developers.openai.com/api/reference/python/resources/responses/methods/compact)を参照してください。
