@@ -28,7 +28,10 @@ from mini_rlm.custom_functions import (
     pdf_function_collection,
 )
 from mini_rlm.llm import (
+    APIRequestError,
+    HistoryItem,
     RequestContext,
+    TokenUsage,
     convert_messages_str,
     get_detailed_token_usage_from_response,
     make_api_request,
@@ -75,40 +78,53 @@ def reset_chat_session(state: ChatSessionState) -> ChatSessionState:
             "pending_decision": None,
             "status": ChatSessionStatus.IDLE,
             "turns": [],
+            "api_history": None,
+            "pending_input_recorded": False,
             "last_error": None,
             "total_tokens": 0,
             "model_token_usages": [],
+            "unknown_usage_count": 0,
         }
     )
 
 
 def _execute_decide_command(state: ChatSessionState) -> CommandResult:
+    new_history: list[HistoryItem] = []
+    token_usage = TokenUsage()
     try:
         messages = build_decision_messages(state)
+        if state.chat_request_context.api_type == "responses":
+            new_history = [messages[-1]]
         response = make_api_request(state.chat_request_context, messages)
+        token_usage = get_detailed_token_usage_from_response(response)
+        if state.chat_request_context.api_type == "responses":
+            new_history.extend(response.output_items)
         if not response.messages:
-            return CommandResult(
-                command_type=ChatSessionCommandType.DECIDE,
-                type=ChatSessionResultType.ERROR,
-                error_message="The chat model returned no message.",
-            )
+            raise ValueError("The chat model returned no message.")
         response_text = convert_messages_str(response.messages).strip()
         decision = validate_chat_decision(
             parse_chat_decision(response_text),
             state.attachments,
         )
-        token_usage = get_detailed_token_usage_from_response(response)
         return CommandResult(
             command_type=ChatSessionCommandType.DECIDE,
             type=ChatSessionResultType.SUCCESS,
             decision=decision,
+            new_history=new_history,
             consumed_tokens=token_usage.total_tokens,
             model_token_usages=token_usage.model_token_usages,
+            unknown_usage_count=token_usage.unknown_usage_count,
         )
     except Exception as error:
+        if isinstance(error, APIRequestError):
+            token_usage = error.token_usage
         return CommandResult(
             command_type=ChatSessionCommandType.DECIDE,
             type=ChatSessionResultType.ERROR,
+            new_history=new_history,
+            consumed_tokens=token_usage.total_tokens,
+            model_token_usages=token_usage.model_token_usages,
+            unknown_usage_count=token_usage.unknown_usage_count,
             error_message=(
                 f"The chat model returned an invalid decision. Details: {error}"
             ),
@@ -177,6 +193,7 @@ def _execute_run_agent_command(state: ChatSessionState) -> CommandResult:
             final_answer=result.final_answer,
             total_iterations=result.total_iterations,
             total_tokens=result.total_tokens,
+            unknown_usage_count=result.unknown_usage_count,
             total_time_seconds=result.total_time_seconds,
         )
         assistant_text = result.final_answer
@@ -192,6 +209,7 @@ def _execute_run_agent_command(state: ChatSessionState) -> CommandResult:
             run_summary=run_summary,
             consumed_tokens=result.total_tokens,
             model_token_usages=result.model_token_usages,
+            unknown_usage_count=result.unknown_usage_count,
         )
     except Exception as error:
         return CommandResult(
@@ -214,6 +232,7 @@ def execute_chat_turn(
     working_state = state.model_copy(
         update={
             "pending_user_text": stripped_user_text,
+            "pending_input_recorded": False,
             "pending_decision": (
                 build_forced_run_decision(stripped_user_text, state.attachments)
                 if force_run

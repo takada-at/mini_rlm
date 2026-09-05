@@ -9,6 +9,7 @@ from mini_rlm.llm import ModelTokenUsage
 
 class UsageLedger(BaseModel):
     total_consumed_tokens: int = 0
+    unknown_usage_count: int = 0
     model_token_usages: list[ModelTokenUsage] = Field(default_factory=list)
 
 
@@ -18,6 +19,7 @@ class ReplResult(BaseModel):
     locals: dict[str, Any]
     execution_time: float
     consumed_tokens: int = 0
+    unknown_usage_count: int = 0
     model_token_usages: list[ModelTokenUsage] = Field(default_factory=list)
     final_answer: str | None = None
     expression_result: str | None = None

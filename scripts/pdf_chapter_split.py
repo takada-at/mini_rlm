@@ -37,8 +37,8 @@ Answer in the following format:
 <start_page_number>,<end_page_number>
 """
 
-MODEL = "openai/gpt-5.3-codex"
-SUB_MODEL = "qwen/qwen3.5-35b-a3b"
+MODEL = "openai/gpt-5.6-terra"
+SUB_MODEL = "z-ai/glm-5.3-flash"
 START_PAGE_PATTERN = re.compile(
     r"\bstart(?:s|ing)?(?:[\s_-]*page(?:[\s_-]*number)?)?\b[^\d-]{0,40}(-?\d+)",
     re.IGNORECASE,
@@ -255,11 +255,13 @@ def main() -> None:
         endpoint_url=endpoint_url,
         model=MODEL,
         api_key=api_key,
+        api_type="responses",
     )
     request_context2 = create_request_context(
         endpoint_url=endpoint_url,
         model=SUB_MODEL,
         api_key=api_key,
+        api_type="responses",
     )
     main_task(request_context, request_context2, pdf_path, args.chapter, save_path)
 

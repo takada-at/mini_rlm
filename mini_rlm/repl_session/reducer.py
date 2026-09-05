@@ -1,4 +1,5 @@
 from mini_rlm.llm import merge_model_token_usages
+from mini_rlm.repl_session.convert import estimate_session_history_tokens
 from mini_rlm.repl_session.data_model import (
     CommandResult,
     ReplSessionCommand,
@@ -41,6 +42,9 @@ def _complete_and_exit(
 def _check_termination(
     state: ReplSessionState,
 ) -> tuple[ReplSessionState, ReplSessionCommand] | None:
+    if state.limits.output_token_reserve >= state.limits.context_window_tokens:
+        return _fail_and_exit(state, TerminationReason.CONTEXT_LIMIT_EXCEEDED)
+
     if state.is_cancelled:
         return _fail_and_exit(state, TerminationReason.CANCELLED)
 
@@ -76,8 +80,8 @@ def _apply_result(state: ReplSessionState, result: CommandResult) -> ReplSession
                 state.model_token_usages,
                 result.model_token_usages,
             ),
-            "current_history_tokens": state.current_history_tokens
-            + result.consumed_tokens,
+            "unknown_usage_count": state.unknown_usage_count
+            + result.unknown_usage_count,
             "is_complete": result.is_complete
             if result.is_complete is not None
             else state.is_complete,
@@ -98,6 +102,7 @@ def _next_command_after_success(
         new_state = new_state.model_copy(
             update={
                 "last_llm_message": prev_command_result.last_llm_message,
+                "last_llm_items": prev_command_result.last_llm_items,
                 "repl_results": None,
             }
         )
@@ -125,6 +130,11 @@ def _next_command_after_success(
                 "repl_history": old_history + repl_results,
             }
         )
+        new_state = new_state.model_copy(
+            update={
+                "current_history_tokens": estimate_session_history_tokens(new_state)
+            }
+        )
         return new_state, next_command
 
     if command_type == ReplSessionCommandType.CHECK_COMPLETE:
@@ -149,9 +159,19 @@ def _next_command_after_success(
         new_state = new_state.model_copy(
             update={
                 "messages": prev_command_result.compacted_messages,
-                "current_history_tokens": 0,
+                "history_includes_prompt": prev_command_result.history_includes_prompt,
             }
         )
+        new_state = new_state.model_copy(
+            update={
+                "current_history_tokens": estimate_session_history_tokens(new_state)
+            }
+        )
+        if (
+            new_state.current_history_tokens + new_state.limits.output_token_reserve
+            > new_state.limits.context_window_tokens
+        ):
+            return _fail_and_exit(new_state, TerminationReason.CONTEXT_LIMIT_EXCEEDED)
         return new_state, next_command
 
     return _with_command(state, ReplSessionCommandType.EXIT)
@@ -161,7 +181,9 @@ def reduce_repl_session(
     prev_state: ReplSessionState,
     prev_command_result: CommandResult | None,
 ) -> tuple[ReplSessionState, ReplSessionCommand]:
-    state = prev_state
+    state = prev_state.model_copy(
+        update={"current_history_tokens": estimate_session_history_tokens(prev_state)}
+    )
 
     if prev_command_result is not None:
         state = _apply_result(state, prev_command_result)
@@ -171,6 +193,8 @@ def reduce_repl_session(
             check = _check_termination(state)
             if check is not None:
                 return check
+            if not prev_command_result.retryable:
+                return _fail_and_exit(state, TerminationReason.API_REQUEST_FAILED)
             return _with_command(state, prev_command_result.command_type)
 
     check = _check_termination(state)

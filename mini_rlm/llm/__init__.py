@@ -2,13 +2,17 @@ from mini_rlm.llm.api_request import make_api_request
 from mini_rlm.llm.context_factory import create_request_context
 from mini_rlm.llm.convert import convert_messages_str
 from mini_rlm.llm.data_model import (
+    APIRequestError,
     APIRequestResult,
+    APIType,
     Endpoint,
+    HistoryItem,
     ImageURL,
     MessageContent,
     MessageContentPart,
     ModelTokenUsage,
     RequestContext,
+    ResponseItem,
     TokenUsage,
 )
 from mini_rlm.llm.message_factory import create_message_content
@@ -40,7 +44,11 @@ __all__ = [
     "remove_think_tag_contents",
     "text_query",
     "text_query_with_usage",
+    "APIRequestError",
     "APIRequestResult",
+    "APIType",
+    "HistoryItem",
+    "ResponseItem",
     "Endpoint",
     "ImageURL",
     "MessageContent",

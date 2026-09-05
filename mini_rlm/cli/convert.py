@@ -15,7 +15,7 @@ from mini_rlm.custom_functions import (
     minimal_function_collection,
     pdf_function_collection,
 )
-from mini_rlm.llm import RequestContext, create_request_context
+from mini_rlm.llm import APIType, RequestContext, create_request_context
 
 ENDPOINT_ENV = "API_ENDPOINT"
 API_KEY_ENV = "API_KEY"
@@ -123,11 +123,13 @@ def build_request_context(
     endpoint_url: str,
     api_key: str,
     model: str,
+    api_type: APIType = "chat_completions",
 ) -> RequestContext:
     return create_request_context(
         endpoint_url=endpoint_url,
         api_key=api_key,
         model=model,
+        api_type=api_type,
     )
 
 
@@ -193,5 +195,6 @@ def format_run_summary(summary: RunSummary) -> str:
         f"termination_reason: {summary.termination_reason}\n"
         f"total_iterations: {summary.total_iterations}\n"
         f"total_tokens: {summary.total_tokens}\n"
+        f"unknown_usage_count: {summary.unknown_usage_count}\n"
         f"total_time_seconds: {summary.total_time_seconds:.2f}"
     )

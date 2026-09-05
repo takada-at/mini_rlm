@@ -12,7 +12,7 @@ from mini_rlm.chat_session.data_model import (
     ChatDecisionType,
     ChatSessionState,
 )
-from mini_rlm.llm import MessageContent, remove_think_tag_contents
+from mini_rlm.llm import HistoryItem, MessageContent, remove_think_tag_contents
 
 _IMAGE_SUFFIXES = {
     ".png",
@@ -83,16 +83,30 @@ def build_attachment_summary(attachments: list[AttachmentRef]) -> str:
     )
 
 
-def build_decision_messages(state: ChatSessionState) -> list[MessageContent]:
+def build_chat_history(state: ChatSessionState) -> list[HistoryItem]:
+    if (
+        state.chat_request_context.api_type == "responses"
+        and state.api_history is not None
+    ):
+        return list(state.api_history)
+    return [
+        message
+        for turn in state.turns
+        for message in (
+            MessageContent(role="user", content=turn.user_text),
+            MessageContent(role="assistant", content=turn.assistant_text),
+        )
+    ]
+
+
+def build_decision_messages(state: ChatSessionState) -> list[HistoryItem]:
     if state.pending_user_text is None:
         raise ValueError("pending_user_text is required to build decision messages.")
 
-    messages = [
+    messages: list[HistoryItem] = [
         MessageContent(role="system", content=create_chat_system_prompt()),
     ]
-    for turn in state.turns:
-        messages.append(MessageContent(role="user", content=turn.user_text))
-        messages.append(MessageContent(role="assistant", content=turn.assistant_text))
+    messages.extend(build_chat_history(state))
 
     messages.append(
         MessageContent(

@@ -6,6 +6,8 @@ from mini_rlm.llm import ModelTokenUsage
 class RecursiveQueryConfig(BaseModel):
     max_depth: int = 2
     child_token_limit: int = 100_000
+    child_context_window_tokens: int = 128_000
+    child_output_token_reserve: int = 4096
     child_iteration_limit: int = 20
     child_timeout_seconds: float = 180.0
     child_error_threshold: int = 5
@@ -26,5 +28,6 @@ class RecursiveQueryResult(BaseModel):
     final_answer: str | None
     total_iterations: int
     total_tokens: int
+    unknown_usage_count: int = 0
     model_token_usages: list[ModelTokenUsage] = Field(default_factory=list)
     total_time_seconds: float

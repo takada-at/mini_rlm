@@ -153,3 +153,57 @@ make test
 - Place tests by domain in `tests/<domain>/`
 - Use behavior-based testing with `give / when / then` comments
 - Avoid excessive unit testing for code with simple side effects or straightforward glue code
+
+## Responses API and reasoning history
+
+Chat Completions remains the default. To use Responses, set the full endpoint URL
+and pass `--api-type responses` to either command:
+
+```bash
+export API_ENDPOINT="https://api.openai.com/v1/responses"
+# API_KEY is read from the existing environment setting.
+uv run mini-rlm chat --api-type responses --model "$MODEL" --sub_model "$SUB_MODEL"
+uv run mini-rlm run --api-type responses --model "$MODEL" --sub_model "$SUB_MODEL" "Inspect the attached files"
+```
+
+Set `MODEL` and `SUB_MODEL` to models available at that endpoint that support
+Responses. The existing default model names are unchanged; both CLI models use
+the selected protocol. The main RLM model must also support `/responses/compact`
+when the history compaction threshold is reached.
+
+For Python callers, select the protocol on each context:
+
+```python
+import os
+from mini_rlm.llm import create_request_context
+
+context = create_request_context(
+    endpoint_url="https://api.openai.com/v1/responses",
+    model=os.environ["MODEL"],
+    api_key=os.environ["API_KEY"],
+    api_type="responses",
+    # Only for models/endpoints that support reasoning.context:
+    request_params={"reasoning": {"effort": "medium", "context": "all_turns"}},
+)
+```
+
+Responses requests use `store=false` and include `reasoning.encrypted_content`.
+The complete output items, including encrypted reasoning and message metadata,
+are replayed in order within each RLM run and between chat turns. Displayed text
+and executable code exclude reasoning. Python callers managing their own history
+should append `result.output_items` from `make_api_request`, then the next user
+message; `result.messages` contains only the visible assistant text.
+
+History belongs to the session, not the shared request context. Separate RLM
+runs and subqueries do not share encrypted reasoning; the chat model receives an
+explicit result message after an agent run. `/reset` clears the chat history,
+including reasoning. There is no disk persistence or automatic chat compaction.
+
+RLM history compaction uses `/responses/compact` and replays its entire output,
+including the encrypted compaction item. Compaction failures retain the current
+history and follow the existing retry/error-limit handling. Chat Completions
+continues to use text summarization. Streaming, background responses, server-side
+conversation IDs, and new API tool execution are not supported.
+
+See the official [reasoning guide](https://developers.openai.com/api/docs/guides/reasoning)
+and [compact API reference](https://developers.openai.com/api/reference/python/resources/responses/methods/compact).

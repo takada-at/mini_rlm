@@ -8,16 +8,24 @@ def get_token_usage_from_response(response: APIRequestResult) -> int:
 
 def get_detailed_token_usage_from_response(response: APIRequestResult) -> TokenUsage:
     """Extract total and model-scoped token usage from the LLM response JSON."""
+    if response.token_usage is not None:
+        return response.token_usage
     response_json = response.response_json
     if "usage" in response_json and isinstance(response_json["usage"], dict):
         usage = response_json["usage"]
         total_tokens = usage.get("total_tokens")
-        prompt_tokens = usage.get("prompt_tokens")
-        completion_tokens = usage.get("completion_tokens")
+        prompt_tokens = usage.get("input_tokens", usage.get("prompt_tokens"))
+        completion_tokens = usage.get("output_tokens", usage.get("completion_tokens"))
         model_name = response.resolved_model_name
 
-        token_usage = TokenUsage()
-        if isinstance(total_tokens, int):
+        token_usage = TokenUsage(
+            unknown_usage_count=0
+            if isinstance(total_tokens, int)
+            and not isinstance(total_tokens, bool)
+            and total_tokens >= 0
+            else 1
+        )
+        if isinstance(total_tokens, int) and token_usage.unknown_usage_count == 0:
             token_usage.total_tokens = total_tokens
 
         if (
@@ -34,7 +42,7 @@ def get_detailed_token_usage_from_response(response: APIRequestResult) -> TokenU
                 )
             ]
         return token_usage
-    return TokenUsage()
+    return TokenUsage(unknown_usage_count=1)
 
 
 def merge_model_token_usages(

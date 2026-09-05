@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any, Dict, List, Literal
 
@@ -22,6 +23,24 @@ class MessageContent(BaseModel):
     name: str | None = None
 
 
+class ResponseItem(BaseModel):
+    """An opaque Responses item; preserve all API fields when replaying it."""
+
+    model_config = ConfigDict(extra="allow")
+
+    type: str
+
+
+type HistoryItem = MessageContent | ResponseItem
+type APIType = Literal["chat_completions", "responses"]
+type RequestOperation = Literal["create", "compact"]
+
+
+class ParsedResponse(BaseModel):
+    messages: list[MessageContent] = Field(default_factory=list)
+    output_items: list[ResponseItem] = Field(default_factory=list)
+
+
 class Endpoint(BaseModel):
     url: str
     method: str = "GET"
@@ -34,6 +53,7 @@ class RequestContext(BaseModel):
 
     session: Session
     endpoint: Endpoint
+    api_type: APIType = "chat_completions"
     kwargs: Dict[str, Any] | None = None
     messages: List[MessageContent] | None = None
 
@@ -45,8 +65,22 @@ class ModelTokenUsage(BaseModel):
 
 
 class TokenUsage(BaseModel):
+    """Known consumption; total_tokens is a lower bound if unknown_usage_count > 0."""
+
     total_tokens: int = 0
+    unknown_usage_count: int = 0
     model_token_usages: List[ModelTokenUsage] = Field(default_factory=list)
+
+
+@dataclass
+class APIRequestError(RuntimeError):
+    """A failed request with usage retained across all attempts."""
+
+    message: str
+    token_usage: TokenUsage
+
+    def __str__(self) -> str:
+        return self.message
 
 
 class RequestStatus(StrEnum):
@@ -68,6 +102,7 @@ class RequestResultType(StrEnum):
     HTTP_ERROR = "http_error"
     NETWORK_ERROR = "network_error"
     INVALID_RESPONSE = "invalid_response"
+    INCOMPLETE_RESPONSE = "incomplete_response"
     SKIPPED = "skipped"
 
 
@@ -85,18 +120,22 @@ class RequestPayload(BaseModel):
     headers: Dict[str, str]
     body: Dict[str, Any]
     timeout_seconds: float
+    api_type: APIType = "chat_completions"
+    operation: RequestOperation = "create"
 
 
 class RequestState(BaseModel):
     status: RequestStatus
     payload: RequestPayload
     retry_policy: RetryPolicy
+    token_usage: TokenUsage = Field(default_factory=TokenUsage)
     attempt_count: int = 0
     next_delay_seconds: float = 0.0
     last_error_type: RequestResultType | None = None
     last_error_message: str | None = None
     response_json: Dict[str, Any] | None = None
     message: MessageContent | None = None
+    parsed_response: ParsedResponse | None = None
 
 
 class RequestCommand(BaseModel):
@@ -110,10 +149,13 @@ class CommandResult(BaseModel):
     status_code: int | None = None
     response_json: Dict[str, Any] | None = None
     message: MessageContent | None = None
+    parsed_response: ParsedResponse | None = None
     error_message: str | None = None
 
 
 class APIRequestResult(BaseModel):
+    token_usage: TokenUsage | None = None
     response_json: Dict[str, Any]
     messages: List[MessageContent]
     resolved_model_name: str | None = None
+    output_items: list[ResponseItem] = Field(default_factory=list)

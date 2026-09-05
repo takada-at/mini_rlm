@@ -171,6 +171,9 @@ def test_append_history_update_messages() -> None:
     # then: messagesが更新される
     assert next_state.messages is not None
     assert len(next_state.messages) == 3
+    assert isinstance(next_state.messages[0], MessageContent)
+    assert isinstance(next_state.messages[1], MessageContent)
+    assert isinstance(next_state.messages[2], MessageContent)
     assert next_state.messages[0].content == "start"
     assert next_state.messages[1].content == "print('hello')"
     assert next_state.messages[2].content == "print('world')"
@@ -182,7 +185,14 @@ def test_reduce_repl_session_history_over_limit_returns_compacting() -> None:
         messages=[
             MessageContent(role="user", content=f"message {i}") for i in range(11)
         ],
-        current_history_tokens=90,
+        limits=ReplSessionLimits(
+            token_limit=100,
+            iteration_limit=3,
+            timeout_seconds=60,
+            error_threshold=2,
+            context_window_tokens=700,
+            output_token_reserve=100,
+        ),
     )
     # when: reducerを実行する
     next_state, command = reduce_repl_session(prev_state, None)
@@ -307,3 +317,151 @@ def test_compaction_command_truncates_messages() -> None:
     # then: messagesが履歴上限の半分にトランケートされる
     assert next_state.messages is not None
     assert len(next_state.messages) == 5
+
+
+def test_api_failure_stops_session_and_preserves_usage() -> None:
+    # テストしたいふるまい: API層で終了した失敗をセッション層で再試行しない
+    # give: エラー閾値未満のセッションと、累積usageを含むAPI失敗
+    state = build_state()
+    result = CommandResult(
+        command_type=ReplSessionCommandType.CALL_LLM,
+        type=ReplSessionResultType.ERROR,
+        retryable=False,
+        consumed_tokens=30,
+    )
+    # when: 失敗を適用する
+    next_state, command = reduce_repl_session(state, result)
+    # then: 消費量を集計して即座に終了する
+    assert command.type == ReplSessionCommandType.EXIT
+    assert next_state.termination_reason == TerminationReason.API_REQUEST_FAILED
+    assert next_state.total_tokens == 30
+    assert next_state.error_count == 1
+    assert state.total_tokens == 0
+
+
+def test_failed_request_usage_counts_towards_token_limit() -> None:
+    # テストしたいふるまい: 失敗時の消費量もトークン上限判定に反映する
+    # give: 上限直前のセッションと失敗した要求のusage
+    state = build_state(total_tokens=90)
+    result = CommandResult(
+        command_type=ReplSessionCommandType.CALL_LLM,
+        type=ReplSessionResultType.ERROR,
+        consumed_tokens=20,
+    )
+    # when: 失敗を適用する
+    next_state, command = reduce_repl_session(state, result)
+    # then: 再試行せずトークン上限で終了する
+    assert command.type == ReplSessionCommandType.EXIT
+    assert next_state.termination_reason == TerminationReason.TOKEN_LIMIT_EXCEEDED
+    assert next_state.total_tokens == 110
+
+
+def test_usage_and_subqueries_do_not_inflate_retained_history() -> None:
+    # テストしたいふるまい: 再送や独立したサブクエリの消費量は入力サイズを増やさない
+    # give: 小さな履歴と十分な消費予算
+    state = build_state(
+        limits=ReplSessionLimits(
+            token_limit=100000,
+            iteration_limit=100,
+            timeout_seconds=60,
+            error_threshold=5,
+        )
+    )
+    state, _ = reduce_repl_session(state, None)
+    original_size = state.current_history_tokens
+    # when: 同じ履歴のLLM要求とコード内サブクエリで消費する
+    for command_type in (
+        ReplSessionCommandType.CALL_LLM,
+        ReplSessionCommandType.EXECUTE_CODE,
+    ):
+        state, _ = reduce_repl_session(
+            state,
+            CommandResult(
+                command_type=command_type,
+                type=ReplSessionResultType.SUCCESS,
+                consumed_tokens=10000,
+                unknown_usage_count=1,
+            ),
+        )
+    # then: 消費量だけが増え、不明件数も保持する
+    assert state.total_tokens == 20000
+    assert state.unknown_usage_count == 2
+    assert state.current_history_tokens == original_size
+    assert not state.is_compaction_limit_exceeded()
+
+
+def test_appended_history_triggers_compaction_independent_of_budget() -> None:
+    # テストしたいふるまい: 消費がゼロでも現在の入力と出力余裕が閾値を超えれば圧縮する
+    # give: コンテキスト容量1000、出力余裕200、十分な消費予算
+    state = build_state(
+        limits=ReplSessionLimits(
+            token_limit=1000000,
+            iteration_limit=10,
+            timeout_seconds=60,
+            error_threshold=5,
+            context_window_tokens=1000,
+            output_token_reserve=200,
+        )
+    )
+    # when: 大きな実行結果を履歴に追加して未完了判定する
+    state, _ = reduce_repl_session(
+        state,
+        CommandResult(
+            command_type=ReplSessionCommandType.APPEND_HISTORY,
+            type=ReplSessionResultType.SUCCESS,
+            new_messages=[MessageContent(role="user", content="x" * 700)],
+        ),
+    )
+    state, command = reduce_repl_session(
+        state,
+        CommandResult(
+            command_type=ReplSessionCommandType.CHECK_COMPLETE,
+            type=ReplSessionResultType.SUCCESS,
+            is_complete=False,
+        ),
+    )
+    # then: 消費予算ではなく履歴に基づいて圧縮する
+    assert command.type == ReplSessionCommandType.COMPACTING
+    assert state.total_tokens == 0
+    assert state.current_history_tokens >= 700
+
+
+def test_compaction_keeps_size_and_stops_if_output_cannot_fit() -> None:
+    # テストしたいふるまい: 圧縮後もサイズを保持し、出力分を確保できなければ停止する
+    # give: 入力に使える容量は800
+    state = build_state(
+        total_tokens=20,
+        limits=ReplSessionLimits(
+            token_limit=10000,
+            iteration_limit=10,
+            timeout_seconds=60,
+            error_threshold=5,
+            context_window_tokens=1000,
+            output_token_reserve=200,
+        ),
+    )
+    for length, expected in [
+        (50, ReplSessionCommandType.CALL_LLM),
+        (900, ReplSessionCommandType.EXIT),
+    ]:
+        # when: 小さい圧縮結果または大きすぎる圧縮結果を適用する
+        next_state, command = reduce_repl_session(
+            state,
+            CommandResult(
+                command_type=ReplSessionCommandType.COMPACTING,
+                type=ReplSessionResultType.SUCCESS,
+                compacted_messages=[
+                    MessageContent(role="assistant", content="x" * length)
+                ],
+                consumed_tokens=10,
+            ),
+        )
+        # then: 予算と残存サイズを別々に保持し、容量不足では再送しない
+        assert command.type == expected
+        assert next_state.total_tokens == 30
+        assert next_state.current_history_tokens >= length
+        if expected == ReplSessionCommandType.EXIT:
+            assert (
+                next_state.termination_reason
+                == TerminationReason.CONTEXT_LIMIT_EXCEEDED
+            )

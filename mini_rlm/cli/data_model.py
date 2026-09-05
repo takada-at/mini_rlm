@@ -3,6 +3,8 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 
+from mini_rlm.llm import APIType
+
 
 class RunMode(StrEnum):
     AUTO = "auto"
@@ -27,6 +29,7 @@ class CommonCLIConfig(BaseModel):
     api_key: str
     model: str
     sub_model: str
+    api_type: APIType = "chat_completions"
     files: list[Path] = Field(default_factory=list)
     verbose: bool = False
 

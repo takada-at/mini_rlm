@@ -52,6 +52,7 @@ def execute_recursive_query(
         final_answer=result.final_answer,
         total_iterations=result.total_iterations,
         total_tokens=result.total_tokens,
+        unknown_usage_count=result.unknown_usage_count,
         model_token_usages=result.model_token_usages,
         total_time_seconds=result.total_time_seconds,
     )

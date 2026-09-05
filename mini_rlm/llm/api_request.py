@@ -1,51 +1,39 @@
 import random
 import time
-from typing import Any, Dict, List
+from collections.abc import Sequence
+from typing import Any, Dict
 
 from mini_rlm.debug_logger import get_logger
 from mini_rlm.llm.data_model import (
+    APIRequestError,
     APIRequestResult,
-    MessageContent,
+    HistoryItem,
     RequestContext,
+    RequestOperation,
     RequestPayload,
     RequestState,
     RequestStatus,
     RetryPolicy,
 )
 from mini_rlm.llm.executor import execute_request_loop
-
-
-def dump_messages(messages: List[MessageContent]) -> List[Dict[str, Any]]:
-    """Dump a list of MessageContent to a list of dicts for JSON serialization."""
-    res = []
-    for message in messages:
-        content: str | List[Dict[str, Any]] = []
-        if isinstance(message.content, str):
-            content = message.content
-        else:
-            assert isinstance(content, list)
-            for part in message.content:
-                if part.type == "text":
-                    content.append({"type": "text", "text": part.text})
-                elif part.type == "image_url":
-                    assert part.image_url is not None
-                    content.append(
-                        {"type": "image_url", "image_url": part.image_url.model_dump()}
-                    )
-                else:
-                    raise ValueError(f"Unsupported message content part: {part}")
-        message_dic = {"role": message.role, "content": content}
-        if message.name is not None:
-            message_dic["name"] = message.name
-        res.append(message_dic)
-    return res
+from mini_rlm.llm.protocol import build_request_payload
+from mini_rlm.llm.protocol import dump_messages as dump_messages
 
 
 def make_api_request(
-    context: RequestContext, messages: List[MessageContent]
+    context: RequestContext,
+    messages: Sequence[HistoryItem],
+    *,
+    operation: RequestOperation = "create",
+    include_context_messages: bool = True,
 ) -> APIRequestResult:
     """Make an API request to the endpoint specified in *context* with the given *messages*."""
-    final_state = run_api_request(context, messages)
+    final_state = run_api_request(
+        context,
+        messages,
+        operation=operation,
+        include_context_messages=include_context_messages,
+    )
     if (
         final_state.status != RequestStatus.SUCCEEDED
         or final_state.response_json is None
@@ -56,38 +44,33 @@ def make_api_request(
             else "unknown"
         )
         error_message = final_state.last_error_message or "request failed"
-        raise RuntimeError(f"LLM API request failed: {error_type}: {error_message}")
-    message = final_state.message
-    if message is not None:
-        return APIRequestResult(
-            response_json=final_state.response_json,
-            messages=[message],
-            resolved_model_name=_resolve_model_name(final_state.response_json, context),
+        raise APIRequestError(
+            f"LLM API request failed: {error_type}: {error_message}",
+            token_usage=final_state.token_usage,
         )
-    else:
-        return APIRequestResult(
-            response_json=final_state.response_json,
-            messages=[],
-            resolved_model_name=_resolve_model_name(final_state.response_json, context),
-        )
+    parsed = final_state.parsed_response
+    return APIRequestResult(
+        token_usage=final_state.token_usage,
+        response_json=final_state.response_json,
+        messages=parsed.messages if parsed is not None else [],
+        output_items=parsed.output_items if parsed is not None else [],
+        resolved_model_name=_resolve_model_name(final_state.response_json, context),
+    )
 
 
 def run_api_request(
-    context: RequestContext, messages: List[MessageContent]
+    context: RequestContext,
+    messages: Sequence[HistoryItem],
+    *,
+    operation: RequestOperation = "create",
+    include_context_messages: bool = True,
 ) -> RequestState:
     """Make an API request to the endpoint specified in *context* with the given *messages*."""
-    dict_messages = dump_messages(messages)
-    if context.messages:
-        dict_messages = dump_messages(context.messages) + dict_messages
-    request_body: Dict[str, Any] = {"messages": dict_messages}
-    if context.kwargs:
-        request_body.update(context.kwargs)
-
-    payload = RequestPayload(
-        url=context.endpoint.url,
-        headers=context.endpoint.headers or {},
-        body=request_body,
-        timeout_seconds=120.0,
+    payload = build_request_payload(
+        context,
+        messages,
+        operation=operation,
+        include_context_messages=include_context_messages,
     )
     retry_policy = RetryPolicy(
         max_attempts=5,
@@ -108,7 +91,11 @@ def run_api_request(
         logger.debug(
             "Sending request to %s with %s message(s)",
             request_payload.url,
-            len(request_payload.body.get("messages", [])),
+            len(
+                request_payload.body.get(
+                    "input", request_payload.body.get("messages", [])
+                )
+            ),
         )
         response = context.session.request(
             "POST",

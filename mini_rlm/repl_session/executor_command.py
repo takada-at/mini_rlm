@@ -8,6 +8,8 @@ from mini_rlm.code_block import (
 from mini_rlm.custom_functions import FunctionCollection
 from mini_rlm.debug_logger import get_logger
 from mini_rlm.llm import (
+    APIRequestError,
+    HistoryItem,
     MessageContent,
     ModelTokenUsage,
     RequestContext,
@@ -18,6 +20,7 @@ from mini_rlm.llm import (
 )
 from mini_rlm.repl import ReplState, execute_code
 from mini_rlm.repl_session.compacting import compact_history
+from mini_rlm.repl_session.convert import build_session_messages
 from mini_rlm.repl_session.data_model import (
     CommandResult,
     ReplSessionCommand,
@@ -35,33 +38,51 @@ def execute_call_llm(
     function_collection: FunctionCollection | None = None,
 ) -> CommandResult:
     """Execute a CALL_LLM command by making an API request to the LLM with the current session history and returning the result."""
-    system_prompt = create_system_prompt(function_collection)
-    system_message = MessageContent(
-        role="system",
-        content=system_prompt,
+    messages = build_session_messages(
+        session_state, request_context, create_system_prompt(function_collection)
     )
-    user_message = MessageContent(role="user", content=session_state.prompt)
-    history = session_state.messages or []
-    messages = [system_message, user_message] + history
-    res = make_api_request(
-        context=request_context,
-        messages=messages,
-    )
+    try:
+        res = make_api_request(
+            context=request_context, messages=messages, include_context_messages=False
+        )
+    except APIRequestError as error:
+        return CommandResult(
+            type=ReplSessionResultType.ERROR,
+            command_type=command.type,
+            error_message=str(error),
+            retryable=False,
+            consumed_tokens=error.token_usage.total_tokens,
+            unknown_usage_count=error.token_usage.unknown_usage_count,
+            model_token_usages=error.token_usage.model_token_usages,
+        )
+    except (RuntimeError, ValueError) as error:
+        return CommandResult(
+            type=ReplSessionResultType.ERROR,
+            command_type=command.type,
+            error_message=str(error),
+        )
+    token_usage = get_detailed_token_usage_from_response(res)
     if len(res.messages) == 0:
         return CommandResult(
             # error result
             type=ReplSessionResultType.ERROR,
             command_type=command.type,
             error_message="No messages returned from LLM",
+            consumed_tokens=token_usage.total_tokens,
+            unknown_usage_count=token_usage.unknown_usage_count,
+            model_token_usages=token_usage.model_token_usages,
         )
     last_message = convert_messages_str(res.messages)
-    token_usage = get_detailed_token_usage_from_response(res)
     return CommandResult(
         type=ReplSessionResultType.SUCCESS,
         command_type=command.type,
         consumed_tokens=token_usage.total_tokens,
+        unknown_usage_count=token_usage.unknown_usage_count,
         model_token_usages=token_usage.model_token_usages,
         last_llm_message=last_message,
+        last_llm_items=list(res.output_items)
+        if request_context.api_type == "responses"
+        else list(res.messages),
     )
 
 
@@ -84,10 +105,12 @@ def execute_execute_command(
     code_blocks = find_code_blocks(session_state.last_llm_message)
     results = []
     consumed_tokens = 0
+    unknown_usage_count = 0
     model_token_usages: list[ModelTokenUsage] = []
     for code in code_blocks:
         exec_result = execute_code(state=repl, code=code)
         consumed_tokens += exec_result.consumed_tokens
+        unknown_usage_count += exec_result.unknown_usage_count
         model_token_usages = merge_model_token_usages(
             model_token_usages,
             exec_result.model_token_usages,
@@ -104,6 +127,7 @@ def execute_execute_command(
         type=ReplSessionResultType.SUCCESS,
         command_type=command.type,
         consumed_tokens=consumed_tokens,
+        unknown_usage_count=unknown_usage_count,
         model_token_usages=model_token_usages,
         repl_results=results,
     )
@@ -122,7 +146,9 @@ def execute_append_history(
             command_type=command.type,
             error_message="No LLM message to append to history",
         )
-    new_messages = format_iteration(message, iteration)
+    new_messages = format_iteration(
+        message, iteration, response_items=session_state.last_llm_items
+    )
     return CommandResult(
         type=ReplSessionResultType.SUCCESS,
         command_type=command.type,
@@ -134,13 +160,19 @@ def format_iteration(
     message: str,
     iteration: List[ReplSessionHistoryEntry],
     max_character_length: int = 20000,
-) -> list[MessageContent]:
+    *,
+    response_items: list[HistoryItem] | None = None,
+) -> list[HistoryItem]:
     """
     Format an RLM iteration (including all code blocks) to append to the message history for
     the prompt of the LM in the next iteration. We also truncate code execution results
     that exceed the max_character_length.
     """
-    messages = [MessageContent(role="assistant", content=message)]
+    messages: list[HistoryItem] = (
+        list(response_items)
+        if response_items
+        else [MessageContent(role="assistant", content=message)]
+    )
 
     for code_block in iteration:
         code = code_block.code
@@ -193,39 +225,53 @@ def execute_compacting(
     function_collection: FunctionCollection | None = None,
 ) -> CommandResult:
     """Execute a COMPACTING command by compacting the session history and returning the result."""
-    system_prompt = create_system_prompt(function_collection)
-    system_message = MessageContent(
-        role="system",
-        content=system_prompt,
-    )
     logger = get_logger()
-    user_message = MessageContent(role="user", content=session_state.prompt)
-    history = session_state.messages or []
-    messages = [system_message, user_message] + history
+    messages = build_session_messages(
+        session_state, request_context, create_system_prompt(function_collection)
+    )
     if session_state.is_compaction_limit_exceeded():
         logger.debug(
-            "Total tokens %d exceeded compacting threshold. Compacting history...",
-            session_state.total_tokens,
+            "Estimated history tokens %d exceeded compacting threshold. Compacting history...",
+            session_state.current_history_tokens,
         )
-        new_messages, token_usage = compact_history(request_context, messages)
+        try:
+            new_messages, token_usage = compact_history(
+                request_context, messages, include_context_messages=False
+            )
+        except APIRequestError as error:
+            return CommandResult(
+                type=ReplSessionResultType.ERROR,
+                command_type=command.type,
+                error_message=str(error),
+                retryable=False,
+                consumed_tokens=error.token_usage.total_tokens,
+                unknown_usage_count=error.token_usage.unknown_usage_count,
+                model_token_usages=error.token_usage.model_token_usages,
+            )
+        except (RuntimeError, ValueError) as error:
+            return CommandResult(
+                type=ReplSessionResultType.ERROR,
+                command_type=command.type,
+                error_message=str(error),
+            )
         logger.debug(
             "Compacted history from %d messages to %d messages",
             len(messages),
             len(new_messages),
         )
-        logger.debug(
-            "New compacted messages:\n%s",
-            "\n".join([f"{m.role}: {m.content}" for m in new_messages]),
-        )
         return CommandResult(
             type=ReplSessionResultType.SUCCESS,
             command_type=command.type,
             compacted_messages=new_messages,
+            history_includes_prompt=request_context.api_type == "responses",
             consumed_tokens=token_usage.total_tokens,
+            unknown_usage_count=token_usage.unknown_usage_count,
             model_token_usages=token_usage.model_token_usages,
         )
     else:
         return CommandResult(
             type=ReplSessionResultType.SUCCESS,
             command_type=command.type,
+            compacted_messages=list(session_state.messages or []),
+            history_includes_prompt=session_state.history_includes_prompt,
         )

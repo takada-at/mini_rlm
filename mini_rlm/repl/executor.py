@@ -163,6 +163,7 @@ def execute_repl_execution(
     code: str,
 ) -> ReplResult:
     start_time = perf_counter()
+    start_unknown_usage_count = repl_state.usage_ledger.unknown_usage_count
     start_consumed_tokens = repl_state.usage_ledger.total_consumed_tokens
     start_model_token_usages = [
         usage.model_copy(deep=True)
@@ -205,6 +206,8 @@ def execute_repl_execution(
         locals=repl_state.locals.copy(),
         execution_time=perf_counter() - start_time,
         consumed_tokens=consumed_tokens,
+        unknown_usage_count=repl_state.usage_ledger.unknown_usage_count
+        - start_unknown_usage_count,
         model_token_usages=model_token_usages,
         final_answer=final_answer,
         expression_result=final_state.expression_result,
