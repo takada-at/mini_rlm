@@ -8,6 +8,7 @@ from mini_rlm.code_block import (
 from mini_rlm.custom_functions import FunctionCollection
 from mini_rlm.debug_logger import get_logger
 from mini_rlm.llm import (
+    APIRequestError,
     HistoryItem,
     MessageContent,
     ModelTokenUsage,
@@ -44,21 +45,32 @@ def execute_call_llm(
         res = make_api_request(
             context=request_context, messages=messages, include_context_messages=False
         )
+    except APIRequestError as error:
+        return CommandResult(
+            type=ReplSessionResultType.ERROR,
+            command_type=command.type,
+            error_message=str(error),
+            retryable=False,
+            consumed_tokens=error.token_usage.total_tokens,
+            model_token_usages=error.token_usage.model_token_usages,
+        )
     except (RuntimeError, ValueError) as error:
         return CommandResult(
             type=ReplSessionResultType.ERROR,
             command_type=command.type,
             error_message=str(error),
         )
+    token_usage = get_detailed_token_usage_from_response(res)
     if len(res.messages) == 0:
         return CommandResult(
             # error result
             type=ReplSessionResultType.ERROR,
             command_type=command.type,
             error_message="No messages returned from LLM",
+            consumed_tokens=token_usage.total_tokens,
+            model_token_usages=token_usage.model_token_usages,
         )
     last_message = convert_messages_str(res.messages)
-    token_usage = get_detailed_token_usage_from_response(res)
     return CommandResult(
         type=ReplSessionResultType.SUCCESS,
         command_type=command.type,
@@ -219,6 +231,15 @@ def execute_compacting(
         try:
             new_messages, token_usage = compact_history(
                 request_context, messages, include_context_messages=False
+            )
+        except APIRequestError as error:
+            return CommandResult(
+                type=ReplSessionResultType.ERROR,
+                command_type=command.type,
+                error_message=str(error),
+                retryable=False,
+                consumed_tokens=error.token_usage.total_tokens,
+                model_token_usages=error.token_usage.model_token_usages,
             )
         except (RuntimeError, ValueError) as error:
             return CommandResult(

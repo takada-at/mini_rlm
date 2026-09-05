@@ -38,6 +38,7 @@ class TerminationReason(StrEnum):
     CANCELLED = "Cancelled"
     COMPLETED = "Completed"
     UNKNOWN = "Unknown"
+    API_REQUEST_FAILED = "APIRequestFailed"
 
 
 class ReplSessionLimits(BaseModel):
@@ -69,6 +70,7 @@ class ReplSessionHistoryEntry(BaseModel):
 class CommandResult(BaseModel):
     command_type: ReplSessionCommandType
     type: ReplSessionResultType
+    retryable: bool = True
     consumed_tokens: int = 0
     model_token_usages: list[ModelTokenUsage] = Field(default_factory=list)
     last_llm_message: str | None = None

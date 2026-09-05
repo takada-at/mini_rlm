@@ -310,3 +310,40 @@ def test_compaction_command_truncates_messages() -> None:
     # then: messagesが履歴上限の半分にトランケートされる
     assert next_state.messages is not None
     assert len(next_state.messages) == 5
+
+
+def test_api_failure_stops_session_and_preserves_usage() -> None:
+    # テストしたいふるまい: API層で終了した失敗をセッション層で再試行しない
+    # give: エラー閾値未満のセッションと、累積usageを含むAPI失敗
+    state = build_state()
+    result = CommandResult(
+        command_type=ReplSessionCommandType.CALL_LLM,
+        type=ReplSessionResultType.ERROR,
+        retryable=False,
+        consumed_tokens=30,
+    )
+    # when: 失敗を適用する
+    next_state, command = reduce_repl_session(state, result)
+    # then: 消費量を集計して即座に終了する
+    assert command.type == ReplSessionCommandType.EXIT
+    assert next_state.termination_reason == TerminationReason.API_REQUEST_FAILED
+    assert next_state.total_tokens == 30
+    assert next_state.error_count == 1
+    assert state.total_tokens == 0
+
+
+def test_failed_request_usage_counts_towards_token_limit() -> None:
+    # テストしたいふるまい: 失敗時の消費量もトークン上限判定に反映する
+    # give: 上限直前のセッションと失敗した要求のusage
+    state = build_state(total_tokens=90)
+    result = CommandResult(
+        command_type=ReplSessionCommandType.CALL_LLM,
+        type=ReplSessionResultType.ERROR,
+        consumed_tokens=20,
+    )
+    # when: 失敗を適用する
+    next_state, command = reduce_repl_session(state, result)
+    # then: 再試行せずトークン上限で終了する
+    assert command.type == ReplSessionCommandType.EXIT
+    assert next_state.termination_reason == TerminationReason.TOKEN_LIMIT_EXCEEDED
+    assert next_state.total_tokens == 110

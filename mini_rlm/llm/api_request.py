@@ -5,6 +5,7 @@ from typing import Any, Dict
 
 from mini_rlm.debug_logger import get_logger
 from mini_rlm.llm.data_model import (
+    APIRequestError,
     APIRequestResult,
     HistoryItem,
     RequestContext,
@@ -43,9 +44,13 @@ def make_api_request(
             else "unknown"
         )
         error_message = final_state.last_error_message or "request failed"
-        raise RuntimeError(f"LLM API request failed: {error_type}: {error_message}")
+        raise APIRequestError(
+            f"LLM API request failed: {error_type}: {error_message}",
+            token_usage=final_state.token_usage,
+        )
     parsed = final_state.parsed_response
     return APIRequestResult(
+        token_usage=final_state.token_usage,
         response_json=final_state.response_json,
         messages=parsed.messages if parsed is not None else [],
         output_items=parsed.output_items if parsed is not None else [],

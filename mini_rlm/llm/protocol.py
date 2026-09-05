@@ -12,6 +12,7 @@ from mini_rlm.llm.data_model import (
     RequestContext,
     RequestOperation,
     RequestPayload,
+    RequestResultType,
     ResponseItem,
 )
 
@@ -171,3 +172,13 @@ def parse_response(
         if texts:
             messages.append(MessageContent(role="assistant", content="".join(texts)))
     return ParsedResponse(messages=messages, output_items=items)
+
+
+def classify_response_error(
+    response: Any, api_type: APIType, operation: RequestOperation
+) -> RequestResultType:
+    """Separate generation failures from malformed responses that may be retried."""
+    if api_type == "responses" and operation == "create" and isinstance(response, dict):
+        if response.get("status") in ("incomplete", "failed", "cancelled"):
+            return RequestResultType.INCOMPLETE_RESPONSE
+    return RequestResultType.INVALID_RESPONSE

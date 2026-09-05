@@ -13,8 +13,10 @@ from mini_rlm.llm import (
     get_detailed_token_usage_from_response,
 )
 from mini_rlm.llm.convert import convert_messages_str
+from mini_rlm.llm.data_model import RequestResultType
 from mini_rlm.llm.protocol import (
     build_request_payload,
+    classify_response_error,
     dump_response_input,
     parse_response,
 )
@@ -301,3 +303,23 @@ def test_responses_and_compaction_usage_maps_to_existing_model_totals() -> None:
     assert usage.total_tokens == 25
     assert usage.model_token_usages[0].prompt_tokens == 10
     assert usage.model_token_usages[0].completion_tokens == 15
+
+
+@pytest.mark.parametrize("status", ["incomplete", "failed", "cancelled"])
+def test_generation_failure_is_distinct_from_parse_failure(status: str) -> None:
+    # テストしたいふるまい: 未完了の生成と再試行可能な解析エラーを区別する
+    # give: 未完了応答とステータスが欠落した不正な応答
+    response = {"status": status, "incomplete_details": {"reason": "max_output_tokens"}}
+    # when / then: 未完了応答だけを再試行不能に分類する
+    assert (
+        classify_response_error(response, "responses", "create")
+        == RequestResultType.INCOMPLETE_RESPONSE
+    )
+    assert (
+        classify_response_error({}, "responses", "create")
+        == RequestResultType.INVALID_RESPONSE
+    )
+    assert (
+        classify_response_error(response, "responses", "compact")
+        == RequestResultType.INVALID_RESPONSE
+    )

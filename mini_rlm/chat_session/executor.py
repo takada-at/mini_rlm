@@ -28,6 +28,7 @@ from mini_rlm.custom_functions import (
     pdf_function_collection,
 )
 from mini_rlm.llm import (
+    APIRequestError,
     HistoryItem,
     RequestContext,
     TokenUsage,
@@ -113,6 +114,8 @@ def _execute_decide_command(state: ChatSessionState) -> CommandResult:
             model_token_usages=token_usage.model_token_usages,
         )
     except Exception as error:
+        if isinstance(error, APIRequestError):
+            token_usage = error.token_usage
         return CommandResult(
             command_type=ChatSessionCommandType.DECIDE,
             type=ChatSessionResultType.ERROR,

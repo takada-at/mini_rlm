@@ -13,7 +13,7 @@ from mini_rlm.llm.data_model import (
     RequestResultType,
     RequestState,
 )
-from mini_rlm.llm.protocol import parse_response
+from mini_rlm.llm.protocol import classify_response_error, parse_response
 from mini_rlm.llm.reducer import reduce_request
 
 
@@ -40,7 +40,13 @@ def _run_request_command(
             )
         except (ValueError, TypeError) as error:
             return CommandResult(
-                type=RequestResultType.INVALID_RESPONSE, error_message=str(error)
+                type=classify_response_error(
+                    response_json, command.payload.api_type, command.payload.operation
+                ),
+                response_json=response_json
+                if isinstance(response_json, dict)
+                else None,
+                error_message=str(error),
             )
         return CommandResult(
             type=RequestResultType.SUCCESS,

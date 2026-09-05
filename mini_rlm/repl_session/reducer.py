@@ -173,6 +173,8 @@ def reduce_repl_session(
             check = _check_termination(state)
             if check is not None:
                 return check
+            if not prev_command_result.retryable:
+                return _fail_and_exit(state, TerminationReason.API_REQUEST_FAILED)
             return _with_command(state, prev_command_result.command_type)
 
     check = _check_termination(state)

@@ -8,6 +8,8 @@ def get_token_usage_from_response(response: APIRequestResult) -> int:
 
 def get_detailed_token_usage_from_response(response: APIRequestResult) -> TokenUsage:
     """Extract total and model-scoped token usage from the LLM response JSON."""
+    if response.token_usage is not None:
+        return response.token_usage
     response_json = response.response_json
     if "usage" in response_json and isinstance(response_json["usage"], dict):
         usage = response_json["usage"]

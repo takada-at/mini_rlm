@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any, Dict, List, Literal
 
@@ -68,6 +69,17 @@ class TokenUsage(BaseModel):
     model_token_usages: List[ModelTokenUsage] = Field(default_factory=list)
 
 
+@dataclass
+class APIRequestError(RuntimeError):
+    """A failed request with usage retained across all attempts."""
+
+    message: str
+    token_usage: TokenUsage
+
+    def __str__(self) -> str:
+        return self.message
+
+
 class RequestStatus(StrEnum):
     IDLE = "idle"
     REQUESTING = "requesting"
@@ -87,6 +99,7 @@ class RequestResultType(StrEnum):
     HTTP_ERROR = "http_error"
     NETWORK_ERROR = "network_error"
     INVALID_RESPONSE = "invalid_response"
+    INCOMPLETE_RESPONSE = "incomplete_response"
     SKIPPED = "skipped"
 
 
@@ -112,6 +125,7 @@ class RequestState(BaseModel):
     status: RequestStatus
     payload: RequestPayload
     retry_policy: RetryPolicy
+    token_usage: TokenUsage = Field(default_factory=TokenUsage)
     attempt_count: int = 0
     next_delay_seconds: float = 0.0
     last_error_type: RequestResultType | None = None
@@ -137,6 +151,7 @@ class CommandResult(BaseModel):
 
 
 class APIRequestResult(BaseModel):
+    token_usage: TokenUsage | None = None
     response_json: Dict[str, Any]
     messages: List[MessageContent]
     resolved_model_name: str | None = None
