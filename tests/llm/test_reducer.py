@@ -174,3 +174,22 @@ def test_incomplete_response_exits_immediately_with_usage() -> None:
     assert state.attempt_count == 1
     assert state.last_error_message == "max_output_tokens"
     assert state.token_usage.total_tokens == 20
+
+
+def test_unknown_attempt_is_preserved_after_success() -> None:
+    # テストしたいふるまい: 通信障害後に成功しても消費量不明の試行を保持する
+    # give: 初回要求
+    state, _ = reduce_request(build_state(), None)
+    # when: タイムアウト後に既知のusage付きで成功する
+    state, _ = reduce_request(state, CommandResult(type=RequestResultType.TIMEOUT))
+    state, command = reduce_request(
+        state,
+        CommandResult(
+            type=RequestResultType.SUCCESS,
+            response_json={"usage": {"total_tokens": 12}},
+        ),
+    )
+    # then: 成功分と不明な試行の両方を一度だけ記録する
+    assert command.type == RequestCommandType.EXIT
+    assert state.token_usage.total_tokens == 12
+    assert state.token_usage.unknown_usage_count == 1

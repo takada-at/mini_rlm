@@ -39,6 +39,7 @@ class TerminationReason(StrEnum):
     COMPLETED = "Completed"
     UNKNOWN = "Unknown"
     API_REQUEST_FAILED = "APIRequestFailed"
+    CONTEXT_LIMIT_EXCEEDED = "ContextLimitExceeded"
 
 
 class ReplSessionLimits(BaseModel):
@@ -46,7 +47,10 @@ class ReplSessionLimits(BaseModel):
     iteration_limit: int
     timeout_seconds: float
     error_threshold: int
-    compacting_threshold_rate: float = 0.85
+    context_window_tokens: int = Field(default=128_000, gt=0)
+    output_token_reserve: int = Field(default=4096, ge=0)
+    image_token_estimate: int = Field(default=8192, gt=0)
+    compacting_threshold_rate: float = Field(default=0.85, gt=0, le=1)
 
 
 class ReplExecutionRequest(BaseModel):
@@ -72,6 +76,7 @@ class CommandResult(BaseModel):
     type: ReplSessionResultType
     retryable: bool = True
     consumed_tokens: int = 0
+    unknown_usage_count: int = 0
     model_token_usages: list[ModelTokenUsage] = Field(default_factory=list)
     last_llm_message: str | None = None
     last_llm_items: list[HistoryItem] = Field(default_factory=list)
@@ -92,8 +97,10 @@ class ReplSessionState(BaseModel):
     current_time_seconds: float
     iteration_count: int = 0
     total_tokens: int = 0
+    unknown_usage_count: int = 0
     model_token_usages: list[ModelTokenUsage] = Field(default_factory=list)
     current_history_tokens: int = 0
+    input_prefix: list[HistoryItem] = Field(default_factory=list)
     error_count: int = 0
     is_complete: bool = False
     is_cancelled: bool = False
@@ -117,7 +124,8 @@ class ReplSessionState(BaseModel):
     def is_compaction_limit_exceeded(self) -> bool:
         return (
             self.current_history_tokens
-            > self.limits.token_limit * self.limits.compacting_threshold_rate
+            > (self.limits.context_window_tokens - self.limits.output_token_reserve)
+            * self.limits.compacting_threshold_rate
         )
 
 
@@ -126,6 +134,7 @@ class ReplSessionResult(BaseModel):
     final_answer: str | None
     total_iterations: int
     total_tokens: int
+    unknown_usage_count: int = 0
     model_token_usages: list[ModelTokenUsage] = Field(default_factory=list)
     total_time_seconds: float
     repl_history: List[ReplSessionHistoryEntry] | None = None

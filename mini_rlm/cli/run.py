@@ -128,6 +128,7 @@ def run_run_command(config: RunCLIConfig) -> int:
         final_answer=result.final_answer,
         total_iterations=result.total_iterations,
         total_tokens=result.total_tokens,
+        unknown_usage_count=result.unknown_usage_count,
         total_time_seconds=result.total_time_seconds,
     )
     _print_run_summary(summary)

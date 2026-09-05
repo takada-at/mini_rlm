@@ -107,3 +107,19 @@ def test_diff_model_token_usages_merges_previous_snapshot_before_subtraction() -
             completion_tokens=6.0,
         )
     ]
+
+
+def test_missing_usage_is_distinct_from_reported_zero() -> None:
+    # テストしたいふるまい: usage未取得を実測ゼロと区別する
+    # give: usageなし、明示的ゼロ、不正な消費量
+    responses = [{}, {"usage": {"total_tokens": 0}}, {"usage": {"total_tokens": -1}}]
+    # when: usageを抽出する
+    usages = [
+        get_detailed_token_usage_from_response(
+            APIRequestResult(response_json=value, messages=[])
+        )
+        for value in responses
+    ]
+    # then: 既知のゼロだけが不明件数ゼロになる
+    assert [usage.total_tokens for usage in usages] == [0, 0, 0]
+    assert [usage.unknown_usage_count for usage in usages] == [1, 0, 1]

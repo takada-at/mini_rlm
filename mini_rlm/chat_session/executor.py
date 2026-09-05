@@ -83,6 +83,7 @@ def reset_chat_session(state: ChatSessionState) -> ChatSessionState:
             "last_error": None,
             "total_tokens": 0,
             "model_token_usages": [],
+            "unknown_usage_count": 0,
         }
     )
 
@@ -112,6 +113,7 @@ def _execute_decide_command(state: ChatSessionState) -> CommandResult:
             new_history=new_history,
             consumed_tokens=token_usage.total_tokens,
             model_token_usages=token_usage.model_token_usages,
+            unknown_usage_count=token_usage.unknown_usage_count,
         )
     except Exception as error:
         if isinstance(error, APIRequestError):
@@ -122,6 +124,7 @@ def _execute_decide_command(state: ChatSessionState) -> CommandResult:
             new_history=new_history,
             consumed_tokens=token_usage.total_tokens,
             model_token_usages=token_usage.model_token_usages,
+            unknown_usage_count=token_usage.unknown_usage_count,
             error_message=(
                 f"The chat model returned an invalid decision. Details: {error}"
             ),
@@ -190,6 +193,7 @@ def _execute_run_agent_command(state: ChatSessionState) -> CommandResult:
             final_answer=result.final_answer,
             total_iterations=result.total_iterations,
             total_tokens=result.total_tokens,
+            unknown_usage_count=result.unknown_usage_count,
             total_time_seconds=result.total_time_seconds,
         )
         assistant_text = result.final_answer
@@ -205,6 +209,7 @@ def _execute_run_agent_command(state: ChatSessionState) -> CommandResult:
             run_summary=run_summary,
             consumed_tokens=result.total_tokens,
             model_token_usages=result.model_token_usages,
+            unknown_usage_count=result.unknown_usage_count,
         )
     except Exception as error:
         return CommandResult(

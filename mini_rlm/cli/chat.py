@@ -64,6 +64,8 @@ def _render_run_summary(console: Console, summary: RunSummary) -> None:
     table.add_row("termination", summary.termination_reason)
     table.add_row("iterations", str(summary.total_iterations))
     table.add_row("tokens", str(summary.total_tokens))
+    if summary.unknown_usage_count:
+        table.add_row("usage unknown (requests)", str(summary.unknown_usage_count))
     table.add_row("elapsed", f"{summary.total_time_seconds:.2f}s")
     console.print(
         Panel.fit(

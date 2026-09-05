@@ -31,6 +31,8 @@ def _apply_result(state: ChatSessionState, result: CommandResult) -> ChatSession
     return state.model_copy(
         update={
             "total_tokens": state.total_tokens + result.consumed_tokens,
+            "unknown_usage_count": state.unknown_usage_count
+            + result.unknown_usage_count,
             "model_token_usages": merge_model_token_usages(
                 state.model_token_usages,
                 result.model_token_usages,

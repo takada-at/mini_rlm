@@ -32,6 +32,8 @@ def build_child_recursive_query_runtime(
 def build_child_repl_limits(config: RecursiveQueryConfig) -> ReplSessionLimits:
     return ReplSessionLimits(
         token_limit=config.child_token_limit,
+        context_window_tokens=config.child_context_window_tokens,
+        output_token_reserve=config.child_output_token_reserve,
         iteration_limit=config.child_iteration_limit,
         timeout_seconds=config.child_timeout_seconds,
         error_threshold=config.child_error_threshold,

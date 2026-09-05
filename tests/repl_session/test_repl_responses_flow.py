@@ -110,7 +110,17 @@ def test_rlm_http_flow_replays_output_then_compaction_without_repeating_prompt(
             ReplSessionCommand(type=ReplSessionCommandType.APPEND_HISTORY), called
         ),
     )
-    needs_compaction = appended.model_copy(update={"current_history_tokens": 900})
+    needs_compaction = appended.model_copy(
+        update={
+            "limits": appended.limits.model_copy(
+                update={
+                    "context_window_tokens": 1000,
+                    "output_token_reserve": 100,
+                    "compacting_threshold_rate": 0.1,
+                }
+            )
+        }
+    )
     compact_result = execute_compacting(
         ReplSessionCommand(type=ReplSessionCommandType.COMPACTING),
         needs_compaction,

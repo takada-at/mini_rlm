@@ -3,7 +3,8 @@ from datetime import datetime
 
 from mini_rlm.code_block import format_execution_result
 from mini_rlm.debug_logger import get_log_file_path, get_logger
-from mini_rlm.llm import RequestContext
+from mini_rlm.llm import MessageContent, RequestContext
+from mini_rlm.repl_session.convert import resolve_session_limits
 from mini_rlm.repl_session.data_model import (
     CommandResult,
     ReplSessionCommandType,
@@ -21,6 +22,7 @@ from mini_rlm.repl_session.executor_command import (
 )
 from mini_rlm.repl_session.reducer import reduce_repl_session
 from mini_rlm.repl_setup import ReplContext
+from mini_rlm.system_prompt import create_system_prompt
 
 Handler = Callable[[ReplSessionState], CommandResult]
 
@@ -116,7 +118,9 @@ def execute_repl_session_loop(
         - iteration_limit: 100 iterations
         - timeout_seconds: 60 seconds
         - error_threshold: 5 errors
-        - compacting_threshold_rate: 0.85 (when total tokens exceed 85% of token_limit, trigger compacting)
+        - context_window_tokens: 128,000 (configure for the selected model)
+        - output_token_reserve: 4,096
+        - compacting_threshold_rate: 0.85 of the available input capacity
 
     Command dispatch flow:
         1. reduce_repl_session determines the next command
@@ -153,8 +157,20 @@ def execute_repl_session_loop(
         error_threshold=5,
     )
 
+    limits = resolve_session_limits(limits, request_context)
+
     state = ReplSessionState(
         prompt=prompt,
+        input_prefix=[
+            *(request_context.messages or []),
+            MessageContent(
+                role="system", content=create_system_prompt(repl_context.functions)
+            ),
+            MessageContent(
+                role="system",
+                content=str((request_context.kwargs or {}).get("instructions", "")),
+            ),
+        ],
         status=ReplSessionStatus.RUNNING,
         limits=limits,
         started_at_seconds=datetime.now().timestamp(),

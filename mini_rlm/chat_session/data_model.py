@@ -45,6 +45,7 @@ class RunSummary(BaseModel):
     final_answer: str | None
     total_iterations: int
     total_tokens: int
+    unknown_usage_count: int = 0
     total_time_seconds: float
 
 
@@ -82,6 +83,7 @@ class ChatSessionState(BaseModel):
     pending_user_text: str | None = None
     pending_decision: ChatDecision | None = None
     total_tokens: int = 0
+    unknown_usage_count: int = 0
     model_token_usages: list[ModelTokenUsage] = Field(default_factory=list)
     last_error: str | None = None
 
@@ -98,6 +100,7 @@ class CommandResult(BaseModel):
     assistant_text: str | None = None
     run_summary: RunSummary | None = None
     consumed_tokens: int = 0
+    unknown_usage_count: int = 0
     model_token_usages: list[ModelTokenUsage] = Field(default_factory=list)
     error_message: str | None = None
 

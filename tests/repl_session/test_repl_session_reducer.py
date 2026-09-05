@@ -185,7 +185,14 @@ def test_reduce_repl_session_history_over_limit_returns_compacting() -> None:
         messages=[
             MessageContent(role="user", content=f"message {i}") for i in range(11)
         ],
-        current_history_tokens=90,
+        limits=ReplSessionLimits(
+            token_limit=100,
+            iteration_limit=3,
+            timeout_seconds=60,
+            error_threshold=2,
+            context_window_tokens=700,
+            output_token_reserve=100,
+        ),
     )
     # when: reducerを実行する
     next_state, command = reduce_repl_session(prev_state, None)
@@ -347,3 +354,114 @@ def test_failed_request_usage_counts_towards_token_limit() -> None:
     assert command.type == ReplSessionCommandType.EXIT
     assert next_state.termination_reason == TerminationReason.TOKEN_LIMIT_EXCEEDED
     assert next_state.total_tokens == 110
+
+
+def test_usage_and_subqueries_do_not_inflate_retained_history() -> None:
+    # テストしたいふるまい: 再送や独立したサブクエリの消費量は入力サイズを増やさない
+    # give: 小さな履歴と十分な消費予算
+    state = build_state(
+        limits=ReplSessionLimits(
+            token_limit=100000,
+            iteration_limit=100,
+            timeout_seconds=60,
+            error_threshold=5,
+        )
+    )
+    state, _ = reduce_repl_session(state, None)
+    original_size = state.current_history_tokens
+    # when: 同じ履歴のLLM要求とコード内サブクエリで消費する
+    for command_type in (
+        ReplSessionCommandType.CALL_LLM,
+        ReplSessionCommandType.EXECUTE_CODE,
+    ):
+        state, _ = reduce_repl_session(
+            state,
+            CommandResult(
+                command_type=command_type,
+                type=ReplSessionResultType.SUCCESS,
+                consumed_tokens=10000,
+                unknown_usage_count=1,
+            ),
+        )
+    # then: 消費量だけが増え、不明件数も保持する
+    assert state.total_tokens == 20000
+    assert state.unknown_usage_count == 2
+    assert state.current_history_tokens == original_size
+    assert not state.is_compaction_limit_exceeded()
+
+
+def test_appended_history_triggers_compaction_independent_of_budget() -> None:
+    # テストしたいふるまい: 消費がゼロでも現在の入力と出力余裕が閾値を超えれば圧縮する
+    # give: コンテキスト容量1000、出力余裕200、十分な消費予算
+    state = build_state(
+        limits=ReplSessionLimits(
+            token_limit=1000000,
+            iteration_limit=10,
+            timeout_seconds=60,
+            error_threshold=5,
+            context_window_tokens=1000,
+            output_token_reserve=200,
+        )
+    )
+    # when: 大きな実行結果を履歴に追加して未完了判定する
+    state, _ = reduce_repl_session(
+        state,
+        CommandResult(
+            command_type=ReplSessionCommandType.APPEND_HISTORY,
+            type=ReplSessionResultType.SUCCESS,
+            new_messages=[MessageContent(role="user", content="x" * 700)],
+        ),
+    )
+    state, command = reduce_repl_session(
+        state,
+        CommandResult(
+            command_type=ReplSessionCommandType.CHECK_COMPLETE,
+            type=ReplSessionResultType.SUCCESS,
+            is_complete=False,
+        ),
+    )
+    # then: 消費予算ではなく履歴に基づいて圧縮する
+    assert command.type == ReplSessionCommandType.COMPACTING
+    assert state.total_tokens == 0
+    assert state.current_history_tokens >= 700
+
+
+def test_compaction_keeps_size_and_stops_if_output_cannot_fit() -> None:
+    # テストしたいふるまい: 圧縮後もサイズを保持し、出力分を確保できなければ停止する
+    # give: 入力に使える容量は800
+    state = build_state(
+        total_tokens=20,
+        limits=ReplSessionLimits(
+            token_limit=10000,
+            iteration_limit=10,
+            timeout_seconds=60,
+            error_threshold=5,
+            context_window_tokens=1000,
+            output_token_reserve=200,
+        ),
+    )
+    for length, expected in [
+        (50, ReplSessionCommandType.CALL_LLM),
+        (900, ReplSessionCommandType.EXIT),
+    ]:
+        # when: 小さい圧縮結果または大きすぎる圧縮結果を適用する
+        next_state, command = reduce_repl_session(
+            state,
+            CommandResult(
+                command_type=ReplSessionCommandType.COMPACTING,
+                type=ReplSessionResultType.SUCCESS,
+                compacted_messages=[
+                    MessageContent(role="assistant", content="x" * length)
+                ],
+                consumed_tokens=10,
+            ),
+        )
+        # then: 予算と残存サイズを別々に保持し、容量不足では再送しない
+        assert command.type == expected
+        assert next_state.total_tokens == 30
+        assert next_state.current_history_tokens >= length
+        if expected == ReplSessionCommandType.EXIT:
+            assert (
+                next_state.termination_reason
+                == TerminationReason.CONTEXT_LIMIT_EXCEEDED
+            )

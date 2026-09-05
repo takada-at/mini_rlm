@@ -195,5 +195,6 @@ def format_run_summary(summary: RunSummary) -> str:
         f"termination_reason: {summary.termination_reason}\n"
         f"total_iterations: {summary.total_iterations}\n"
         f"total_tokens: {summary.total_tokens}\n"
+        f"unknown_usage_count: {summary.unknown_usage_count}\n"
         f"total_time_seconds: {summary.total_time_seconds:.2f}"
     )

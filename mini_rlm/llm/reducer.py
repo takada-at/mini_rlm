@@ -76,6 +76,8 @@ def reduce_request(
             "response_json": prev_command_result.response_json,
             "token_usage": TokenUsage(
                 total_tokens=prev_state.token_usage.total_tokens + usage.total_tokens,
+                unknown_usage_count=prev_state.token_usage.unknown_usage_count
+                + usage.unknown_usage_count,
                 model_token_usages=merge_model_token_usages(
                     prev_state.token_usage.model_token_usages, usage.model_token_usages
                 ),

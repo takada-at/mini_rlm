@@ -168,7 +168,7 @@ def test_compaction_replaces_history_without_repeating_initial_messages() -> Non
     assert payload.body["input"][2:] == dump_response_input(compacted)
     assert len(payload.body["input"]) == 5
     assert [item["role"] for item in payload.body["input"][:2]] == ["system", "system"]
-    assert next_state.current_history_tokens == 0
+    assert next_state.current_history_tokens > 0
     assert next_state.total_tokens == 20
     assert state.messages == _items()
 

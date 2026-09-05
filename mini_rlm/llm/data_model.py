@@ -65,7 +65,10 @@ class ModelTokenUsage(BaseModel):
 
 
 class TokenUsage(BaseModel):
+    """Known consumption; total_tokens is a lower bound if unknown_usage_count > 0."""
+
     total_tokens: int = 0
+    unknown_usage_count: int = 0
     model_token_usages: List[ModelTokenUsage] = Field(default_factory=list)
 
 

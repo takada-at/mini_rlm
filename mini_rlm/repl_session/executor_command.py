@@ -52,6 +52,7 @@ def execute_call_llm(
             error_message=str(error),
             retryable=False,
             consumed_tokens=error.token_usage.total_tokens,
+            unknown_usage_count=error.token_usage.unknown_usage_count,
             model_token_usages=error.token_usage.model_token_usages,
         )
     except (RuntimeError, ValueError) as error:
@@ -68,6 +69,7 @@ def execute_call_llm(
             command_type=command.type,
             error_message="No messages returned from LLM",
             consumed_tokens=token_usage.total_tokens,
+            unknown_usage_count=token_usage.unknown_usage_count,
             model_token_usages=token_usage.model_token_usages,
         )
     last_message = convert_messages_str(res.messages)
@@ -75,6 +77,7 @@ def execute_call_llm(
         type=ReplSessionResultType.SUCCESS,
         command_type=command.type,
         consumed_tokens=token_usage.total_tokens,
+        unknown_usage_count=token_usage.unknown_usage_count,
         model_token_usages=token_usage.model_token_usages,
         last_llm_message=last_message,
         last_llm_items=list(res.output_items)
@@ -102,10 +105,12 @@ def execute_execute_command(
     code_blocks = find_code_blocks(session_state.last_llm_message)
     results = []
     consumed_tokens = 0
+    unknown_usage_count = 0
     model_token_usages: list[ModelTokenUsage] = []
     for code in code_blocks:
         exec_result = execute_code(state=repl, code=code)
         consumed_tokens += exec_result.consumed_tokens
+        unknown_usage_count += exec_result.unknown_usage_count
         model_token_usages = merge_model_token_usages(
             model_token_usages,
             exec_result.model_token_usages,
@@ -122,6 +127,7 @@ def execute_execute_command(
         type=ReplSessionResultType.SUCCESS,
         command_type=command.type,
         consumed_tokens=consumed_tokens,
+        unknown_usage_count=unknown_usage_count,
         model_token_usages=model_token_usages,
         repl_results=results,
     )
@@ -225,8 +231,8 @@ def execute_compacting(
     )
     if session_state.is_compaction_limit_exceeded():
         logger.debug(
-            "Total tokens %d exceeded compacting threshold. Compacting history...",
-            session_state.total_tokens,
+            "Estimated history tokens %d exceeded compacting threshold. Compacting history...",
+            session_state.current_history_tokens,
         )
         try:
             new_messages, token_usage = compact_history(
@@ -239,6 +245,7 @@ def execute_compacting(
                 error_message=str(error),
                 retryable=False,
                 consumed_tokens=error.token_usage.total_tokens,
+                unknown_usage_count=error.token_usage.unknown_usage_count,
                 model_token_usages=error.token_usage.model_token_usages,
             )
         except (RuntimeError, ValueError) as error:
@@ -258,6 +265,7 @@ def execute_compacting(
             compacted_messages=new_messages,
             history_includes_prompt=request_context.api_type == "responses",
             consumed_tokens=token_usage.total_tokens,
+            unknown_usage_count=token_usage.unknown_usage_count,
             model_token_usages=token_usage.model_token_usages,
         )
     else:
